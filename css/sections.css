@@ -1,0 +1,182 @@
+/* ===================================================================
+   SECCIONES — layout full-bleed, una por pantalla
+   =================================================================== */
+
+.seccion {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--espacio-seccion-padding);
+  position: relative;
+}
+
+.seccion__contenido {
+  max-width: var(--ancho-contenido-max);
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Reserva de espacio para la línea de ruta lateral en desktop.
+   Sin esto, en anchos medianos (~1024px) el padding proporcional (6vw)
+   deja el texto arrancando antes de donde termina el nav y se pisan.
+   El max() garantiza un piso fijo sin importar el viewport. */
+@media (min-width: 769px) {
+  .seccion {
+    padding-left: max(var(--espacio-seccion-padding), 8.5rem);
+  }
+}
+
+/* -------------------------------------------------
+   HERO — variante centrada, es la única pantalla de "portada"
+   ------------------------------------------------- */
+
+.seccion__contenido--hero {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.seccion__contenido--hero .bajada {
+  margin-top: 1rem;
+  margin-bottom: 2.5rem;
+}
+
+.scroll-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--color-texto-claro-muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+  width: fit-content;
+  transition: color 200ms var(--easing-estandar);
+}
+
+.scroll-cta:hover {
+  color: var(--color-acento);
+}
+
+.scroll-cta svg {
+  animation: rebote-suave 2s ease-in-out infinite;
+}
+
+@keyframes rebote-suave {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(4px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-cta svg {
+    animation: none;
+  }
+}
+
+/* -------------------------------------------------
+   PASOS (sección "Cómo funciona")
+   ------------------------------------------------- */
+
+.pasos {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  margin-top: 2.5rem;
+}
+
+.paso {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid rgba(242, 244, 248, 0.12);
+}
+
+.paso:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.paso__num {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--color-acento);
+  flex-shrink: 0;
+  min-width: 3ch;
+}
+
+.paso__texto h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+  color: var(--color-texto-claro);
+}
+
+.paso__texto p {
+  color: var(--color-texto-claro-muted);
+  max-width: 48ch;
+}
+
+/* -------------------------------------------------
+   CONTACTO
+   ------------------------------------------------- */
+
+.seccion__contenido--contacto {
+  text-align: left;
+}
+
+.contacto-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.contacto-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.85rem 1.75rem;
+  border: 1px solid rgba(242, 244, 248, 0.3);
+  border-radius: 2px;
+  text-decoration: none;
+  /* Sans y no display: son botones, no titulares */
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  color: var(--color-texto-claro);
+  transition: border-color 200ms var(--easing-estandar),
+              background 200ms var(--easing-estandar);
+}
+
+.contacto-link:hover {
+  border-color: var(--color-acento);
+  background: rgba(217, 167, 60, 0.1);
+}
+
+.contacto-link--whatsapp {
+  border-color: var(--color-exito);
+  background: rgba(69, 160, 106, 0.12);
+}
+
+.contacto-link--whatsapp:hover {
+  background: rgba(69, 160, 106, 0.22);
+}
+
+/* -------------------------------------------------
+   RESPONSIVE — deja de reservar espacio para la línea de ruta lateral
+   en pantallas angostas (se convierte en barra superior, ver route-line.css)
+   ------------------------------------------------- */
+
+@media (max-width: 768px) {
+  .seccion {
+    padding: 1.5rem 1.25rem;
+  }
+
+  .paso {
+    gap: 1rem;
+  }
+}

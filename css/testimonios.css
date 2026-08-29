@@ -1,0 +1,74 @@
+/* ===================================================================
+   TESTIMONIOS — grilla de videos horizontales
+   ===================================================================
+   Videos horizontales (decisión tomada con el cliente: encajan mejor
+   en las secciones full-bleed que verticales). Cada bloque revela con
+   fade-in al entrar en viewport, igual que el resto del contenido
+   marcado con [data-reveal].
+   =================================================================== */
+
+.testimonios-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-top: 2.5rem;
+}
+
+.testimonio {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.testimonio__video-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9; /* horizontal — ver guion de grabación enviado al cliente */
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid rgba(242, 244, 248, 0.15);
+}
+
+.testimonio__video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.testimonio__texto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.testimonio__nombre {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-texto-claro);
+}
+
+.testimonio__detalle {
+  font-size: 0.9rem;
+  color: var(--color-texto-claro-muted);
+}
+
+/* -------------------------------------------------
+   La sección de testimonios suele tener más contenido que las otras
+   (hasta N videos), así que no fuerza min-height: 100vh estricto,
+   se expande según haga falta mientras conserva el padding de sección.
+   ------------------------------------------------- */
+
+.seccion--testimonios {
+  min-height: 100vh;
+  height: auto;
+  padding-top: 4rem;
+  padding-bottom: 4rem;
+}
+
+@media (max-width: 640px) {
+  .testimonios-grid {
+    grid-template-columns: 1fr;
+  }
+}

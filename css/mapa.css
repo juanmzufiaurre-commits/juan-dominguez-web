@@ -1,0 +1,39 @@
+/* ===================================================================
+   MAPA PUNTEADO DE FONDO
+   ===================================================================
+   Canvas fijo con los continentes dibujados en puntos, la deformación
+   de lupa bajo el cursor y los aviones cruzando. Toda la lógica está
+   en js/mapa-mundi.js — acá solo va dónde se ubica la capa.
+
+   z-index 1 lo pone entre los fondos de sección (z 0) y el texto
+   (z 2, ver css/fondos.css). Por eso .seccion NO crea contexto de
+   apilamiento propio: si lo creara, el mapa no podría meterse en el
+   medio y quedaría o tapando el texto o invisible bajo las fotos.
+   =================================================================== */
+
+.mapa-fondo {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  display: block;
+  /* Nunca intercepta clicks ni scroll: es decoración */
+  pointer-events: none;
+  /* Aparece con calma en la primera carga, para que no golpee de una
+     junto con el resto del hero. */
+  opacity: 0;
+  transition: opacity 1200ms var(--easing-estandar);
+}
+
+.mapa-fondo.is-listo {
+  opacity: 1;
+}
+
+/* Sin JS o sin canvas no queda nada raro: la capa es transparente. */
+
+@media (prefers-reduced-motion: reduce) {
+  .mapa-fondo {
+    transition: none;
+  }
+}

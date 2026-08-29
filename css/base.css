@@ -1,0 +1,144 @@
+/* ===================================================================
+   BASE — reset, tipografía global, accesibilidad
+   =================================================================== */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--color-texto-claro);
+  background: var(--bg-hero);
+  /* El fondo se transiciona vía JS agregando/quitando estilo inline
+     o clase en body — ver js/bg-transition.js */
+  transition: background var(--duracion-bg-transition) var(--easing-estandar);
+  overflow-x: hidden;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  margin: 0;
+  /* 1.1 y no 1.05: Playfair Display tiene ascendentes y descendentes
+     más largos que la grotesca anterior y a 1.05 las líneas se tocan
+     en los títulos de dos renglones. */
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+}
+
+p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+a {
+  color: inherit;
+}
+
+img, video {
+  max-width: 100%;
+  display: block;
+}
+
+ul, ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Foco visible — accesibilidad, no quitar */
+:focus-visible {
+  outline: 2px solid var(--color-acento);
+  outline-offset: 3px;
+}
+
+/* -------------------------------------------------
+   TIPOGRAFÍA COMPARTIDA ENTRE SECCIONES
+   ------------------------------------------------- */
+
+/* El rótulo va en la sans y no en la display: Playfair en mayúsculas
+   chiquitas y con tracking abierto pierde legibilidad — los remates
+   se empastan. Inter 600 mantiene el aire de etiqueta de aduana. */
+.eyebrow {
+  display: block;
+  font-family: var(--font-body);
+  font-size: var(--size-eyebrow);
+  font-weight: 600;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--color-acento);
+  margin-bottom: 1rem;
+}
+
+.titular {
+  font-size: var(--size-titular);
+  font-weight: 600;
+  color: var(--color-texto-claro);
+}
+
+.titulo-seccion {
+  font-size: var(--size-titulo-seccion);
+  font-weight: 600;
+  color: var(--color-texto-claro);
+  margin-bottom: 1.5rem;
+}
+
+.bajada {
+  font-size: var(--size-bajada);
+  font-weight: 400;
+  color: var(--color-texto-claro-muted);
+  font-family: var(--font-body);
+  max-width: 34ch;
+}
+
+.texto-cuerpo {
+  font-size: var(--size-cuerpo);
+  color: var(--color-texto-claro-muted);
+  max-width: 58ch;
+}
+
+/* -------------------------------------------------
+   ANIMACIÓN DE REVELADO AL SCROLLEAR
+   -------------------------------------------------
+   Estado inicial (oculto) + estado .is-visible (revelado).
+   La clase .is-visible la agrega js/reveal.js vía Intersection Observer
+   cuando el elemento [data-reveal] entra en viewport.
+   */
+
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 700ms var(--easing-estandar),
+              transform 700ms var(--easing-estandar);
+}
+
+[data-reveal].is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Efecto escalonado simple entre elementos hermanos revelados juntos */
+[data-reveal]:nth-child(2) { transition-delay: 80ms; }
+[data-reveal]:nth-child(3) { transition-delay: 160ms; }
+[data-reveal]:nth-child(4) { transition-delay: 240ms; }
+
+/* Respeto a accesibilidad: si el usuario pidió menos movimiento,
+   se muestra todo directamente sin animar. NO ELIMINAR. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  body {
+    transition: none;
+  }
+}

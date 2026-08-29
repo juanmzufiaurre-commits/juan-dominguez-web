@@ -1,0 +1,161 @@
+/* ===================================================================
+   INTRO ANIMADA — globo 3D (Obelisco → Argentina → China/Paraguay)
+   ===================================================================
+   Overlay fijo, pantalla completa, por encima de todo el sitio.
+   El timeline de cámara vive en js/intro-globe.js; acá solo el look
+   del overlay (fondo de respaldo, botón de salto, labels de texto).
+
+   Mientras la intro está activa, body recibe la clase .intro-lock
+   (bloquea el scroll) y .route-line queda oculta para que no aparezca
+   flotando sobre la animación.
+   =================================================================== */
+
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: var(--bg-hero);
+  overflow: hidden;
+  opacity: 1;
+  transition: opacity 700ms var(--easing-estandar);
+}
+
+.intro.intro--saliendo {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.intro__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Viñeta sutil para que el texto/botón siempre tengan contraste
+   sin importar qué haya detrás en el globo */
+.intro::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(to top, rgba(7, 11, 20, 0.55) 0%, rgba(7, 11, 20, 0) 22%),
+    linear-gradient(to bottom, rgba(7, 11, 20, 0.4) 0%, rgba(7, 11, 20, 0) 18%);
+}
+
+.intro__skip {
+  position: absolute;
+  top: clamp(1.25rem, 4vw, 2.5rem);
+  right: clamp(1.25rem, 4vw, 2.5rem);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.1rem;
+  border: 1px solid rgba(242, 244, 248, 0.3);
+  border-radius: 999px;
+  background: rgba(7, 11, 20, 0.35);
+  backdrop-filter: blur(6px);
+  color: var(--color-texto-claro);
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 0.8rem;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: border-color 200ms var(--easing-estandar),
+              background 200ms var(--easing-estandar);
+}
+
+.intro__skip:hover {
+  border-color: var(--color-acento);
+  background: rgba(217, 167, 60, 0.18);
+}
+
+.intro__skip svg {
+  flex-shrink: 0;
+}
+
+/* Texto narrativo (subtítulos de cada fase: "Vos detectás la
+   tendencia", "Nosotros somos tu puente logístico"). Uno solo visible
+   por vez — intro-globe.js le pisa el textContent y togglea .is-visible. */
+.intro__relato {
+  position: absolute;
+  left: clamp(1.25rem, 6vw, 4rem);
+  bottom: clamp(2rem, 8vh, 4.5rem);
+  right: clamp(1.25rem, 6vw, 4rem);
+  z-index: 2;
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 4vw, 2.4rem);
+  font-weight: 600;
+  color: var(--color-texto-claro);
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 500ms var(--easing-estandar),
+              transform 500ms var(--easing-estandar);
+}
+
+.intro__relato.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Texto final ("Juntos construimos tu imperio.") — el remate
+   "imponente": centrado, grande, aparece cuando el resto de la escena
+   ya se está desvaneciendo. */
+.intro__final {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0 1.5rem;
+  font-family: var(--font-display);
+  font-size: clamp(2.25rem, 7vw, 4.5rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--color-texto-claro);
+  opacity: 0;
+  transform: scale(0.96);
+  transition: opacity 900ms var(--easing-estandar),
+              transform 900ms var(--easing-estandar);
+  pointer-events: none;
+}
+
+.intro__final.is-visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* La escena 3D se desvanece antes que el overlay completo, para que
+   el texto final quede solo un instante sobre el fondo (fase 5). */
+.intro__canvas.is-fading {
+  transition: opacity 900ms var(--easing-estandar);
+  opacity: 0;
+}
+
+/* Mientras la intro está activa: bloquear scroll y ocultar la línea
+   de ruta (no tiene sentido mostrarla si todavía no se ve el Hero) */
+body.intro-lock {
+  overflow: hidden;
+  height: 100vh;
+}
+
+body.intro-lock .route-line {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Sin JS o sin soporte: no dejar el overlay bloqueando el sitio */
+.no-js .intro {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro {
+    display: none;
+  }
+}

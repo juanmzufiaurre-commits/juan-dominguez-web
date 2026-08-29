@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Juan Domínguez Importación</title>
+  <meta name="description" content="Te ayudo a importar lo que estás buscando y a venderlo bien.">
+
+  <!-- 
+    Contenido actualizado con datos reales del cliente (Juan Domínguez).
+    Quedan pendientes: WhatsApp e Instagram (sección Contacto, más abajo)
+    y los videos de testimonios (sección Testimonios).
+  -->
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!--
+    Tipografía definitiva: Fraunces (serif de eje óptico, con carácter
+    propio) + Inter (grotesca de cuerpo). Ver css/tokens.css.
+    El eje opsz de Fraunces engorda los trazos en tamaños chicos y los
+    afina en los titulares grandes, así que una sola familia cubre bien
+    todo el rango sin quedar frágil.
+  -->
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!--
+    La foto del Hero es lo primero que se ve al terminar la intro:
+    se precarga para que no aparezca en dos tiempos. Las otras cuatro
+    NO se precargan a propósito — cargan mientras se lee el Hero.
+  -->
+  <link rel="preload" as="image" href="assets/img/juan-recorte.webp">
+
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/sections.css">
+  <!-- Fotos de fondo por sección: va después de sections.css porque
+       le agrega capas a .seccion (ver css/fondos.css) -->
+  <link rel="stylesheet" href="css/fondos.css">
+  <!-- Hero de presentación: va después de fondos.css porque le ajusta
+       el padding a .seccion--portada (ver css/portada.css) -->
+  <link rel="stylesheet" href="css/portada.css">
+  <link rel="stylesheet" href="css/mapa.css">
+  <link rel="stylesheet" href="css/route-line.css">
+  <link rel="stylesheet" href="css/testimonios.css">
+  <link rel="stylesheet" href="css/intro.css">
+</head>
+<body>
+
+  <!--
+    INTRO ANIMADA — coreografía de IMPORTACIÓN (China/Paraguay → Argentina)
+    ---------------------------------------------------------------
+    Globo 3D en WebGL (Three.js, ver js/intro-globe.js), con los
+    continentes reales (ver js/continentes-data.js), banderas clavadas
+    en China/Paraguay/Argentina, cajas de mercadería que se transforman
+    en aviones y vuelan hacia Argentina, y un texto narrativo
+    sincronizado a cada fase. Autoplay, se reproduce en cada carga de
+    página, con botón "Saltar intro" siempre visible. Si el navegador
+    no soporta WebGL o el usuario tiene activado "reducir movimiento",
+    se salta directo al Hero sin reproducirse.
+  -->
+  <div class="intro" id="intro" aria-hidden="true">
+    <canvas class="intro__canvas" id="intro-canvas"></canvas>
+    <div class="intro__relato" id="intro-relato"></div>
+    <div class="intro__final" id="intro-final">Juntos construimos tu imperio.</div>
+    <button class="intro__skip" id="intro-skip" type="button">
+      Saltar intro
+      <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <path d="M7 4L14 10L7 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <script>
+    // Red de seguridad: si por lo que sea (three.js no cargó, error
+    // de script, etc.) js/intro-globe.js no llegó a arrancar en 2.5s,
+    // se saca la intro para no dejar el sitio bloqueado detrás de una
+    // pantalla trabada.
+    window.setTimeout(function () {
+      if (!window.__introGlobeReady) {
+        var intro = document.getElementById('intro');
+        if (intro) intro.remove();
+        document.body.classList.remove('intro-lock');
+      }
+    }, 2500);
+  </script>
+
+  <!--
+    LÍNEA DE RUTA (signature element)
+    Barra fija lateral que representa el "trayecto" de una importación.
+    Se va completando a medida que se avanza por las 5 secciones.
+    Ver js/route-line.js para la lógica de progreso.
+  -->
+  <nav class="route-line" aria-label="Progreso en la página">
+    <!-- El riel y su relleno son decorativos: el progreso real lo
+         comunican las paradas (aria-current en la activa). -->
+    <div class="route-line__riel" aria-hidden="true">
+      <div class="route-line__fill"></div>
+    </div>
+    <ol class="route-line__stops">
+      <li class="route-line__stop" data-stop="hero">
+        <a href="#hero"><span class="route-line__punto"></span><span class="route-line__label">Origen</span></a>
+      </li>
+      <li class="route-line__stop" data-stop="dedica">
+        <a href="#dedica"><span class="route-line__punto"></span><span class="route-line__label">Rubro</span></a>
+      </li>
+      <li class="route-line__stop" data-stop="proceso">
+        <a href="#proceso"><span class="route-line__punto"></span><span class="route-line__label">Trayecto</span></a>
+      </li>
+      <li class="route-line__stop" data-stop="testimonios">
+        <a href="#testimonios"><span class="route-line__punto"></span><span class="route-line__label">Destino</span></a>
+      </li>
+      <li class="route-line__stop" data-stop="contacto">
+        <a href="#contacto"><span class="route-line__punto"></span><span class="route-line__label">Contacto</span></a>
+      </li>
+    </ol>
+  </nav>
+
+  <!--
+    MAPA PUNTEADO DE FONDO
+    Capa fija que atraviesa toda la página: continentes en puntos,
+    lupa bajo el cursor y aviones cruzando. Va entre los fondos de
+    sección y el texto (ver css/mapa.css y js/mapa-mundi.js).
+    Es decorativo: aria-hidden y sin eventos de puntero.
+  -->
+  <canvas class="mapa-fondo" id="mapa-fondo" aria-hidden="true"></canvas>
+
+  <main>
+
+    <!-- ============================================ -->
+    <!-- SECCIÓN 1 — HERO / QUIÉN ES                   -->
+    <!-- ============================================ -->
+    <section class="seccion seccion--portada" id="hero" data-bg="hero" data-stop="hero">
+      <div class="seccion__contenido portada">
+
+        <div class="portada__copy">
+          <p class="eyebrow reveal" data-reveal>Sobre mí</p>
+
+          <h1 class="portada__titular reveal" data-reveal>
+            Importar desde <em>China y Paraguay</em> nunca fue tan fácil
+          </h1>
+
+          <p class="portada__firma reveal" data-reveal>— Soy Juan Domínguez</p>
+
+          <p class="portada__bajada reveal" data-reveal>
+            Vengo del comercio desde 2018 y en 2022 arranqué mi propio camino
+            en la importación. Sé exactamente qué frena a un importador
+            primerizo — y cómo evitarlo desde el primer envío.
+          </p>
+
+          <!--
+            DATOS DE AUTORIDAD
+            ---------------------------------------------------------
+            Los dos que están son los únicos que la página respalda:
+            "desde 2018 en comercio, 2022 en importación" (sección
+            "A qué me dedico") y las dos rutas China/Paraguay.
+
+            FALTA CONFIRMAR CON JUAN: el boceto original traía
+            "+500 importadores formados" y "+10 años de experiencia".
+            Ninguno de los dos se sostiene con el contenido actual del
+            sitio, así que NO se publicaron. Cuando Juan confirme el
+            número real, descomentar el bloque de abajo y completarlo.
+
+            <li class="dato">
+              <span class="dato__valor" data-contador="500" data-prefijo="+">+500</span>
+              <span class="dato__etiqueta">Importadores acompañados</span>
+            </li>
+          -->
+          <ul class="portada__datos reveal" data-reveal>
+            <li class="dato">
+              <span class="dato__valor" data-contador="4" data-prefijo="+">+4</span>
+              <span class="dato__etiqueta">Años importando</span>
+            </li>
+            <li class="dato">
+              <span class="dato__valor" data-contador="2">2</span>
+              <span class="dato__etiqueta">Rutas: China y Paraguay</span>
+            </li>
+          </ul>
+
+          <div class="portada__acciones reveal" data-reveal>
+            <a href="#dedica" class="boton-primario">
+              Conocé mi historia
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M4 10H16M16 10L11 5M16 10L11 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
+            <a href="#testimonios" class="boton-secundario">Ver testimonios</a>
+          </div>
+        </div>
+
+        <div class="portada__visual">
+          <div class="portada__aro" aria-hidden="true"></div>
+
+          <!--
+            El plano 3D: el panel y la foto son dos capas a distinta
+            profundidad (translateZ). Al inclinarse con el cursor, la
+            perspectiva sola produce el parallax entre las dos — no hace
+            falta moverlas por separado. Ver js/portada.js.
+          -->
+          <div class="portada__plano" id="portada-plano">
+            <div class="portada__panel" aria-hidden="true"></div>
+            <img
+              class="portada__foto"
+              src="assets/img/juan-recorte.webp"
+              alt="Juan Domínguez"
+              width="720"
+              height="1043"
+              fetchpriority="high"
+              decoding="async">
+          </div>
+
+          <div class="vidrio vidrio--etiqueta">
+            <span class="vidrio__punto" aria-hidden="true"></span>
+            <span>Importación directa · China · Paraguay</span>
+          </div>
+
+          <!--
+            PENDIENTE: testimonio de ejemplo. Reemplazar la cita y el
+            autor cuando lleguen los videos reales (los mismos que van
+            en la sección Testimonios). Hasta entonces el pie dice
+            explícitamente que es un ejemplo, para no publicar como
+            real un testimonio que nadie dio.
+          -->
+          <figure class="vidrio vidrio--testimonio">
+            <span class="vidrio__estrellas" aria-label="5 de 5 estrellas">★★★★★</span>
+            <blockquote class="vidrio__cita">Con Juan armé mi primer contenedor sin miedo.</blockquote>
+            <figcaption class="vidrio__autor">Testimonio de ejemplo · a reemplazar</figcaption>
+          </figure>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- SECCIÓN 2 — A QUÉ SE DEDICA                   -->
+    <!-- ============================================ -->
+    <section class="seccion" id="dedica" data-bg="dedica" data-stop="dedica">
+      <div class="seccion__contenido">
+        <p class="eyebrow reveal" data-reveal>01 — A qué me dedico</p>
+        <h2 class="titulo-seccion reveal" data-reveal>
+          Importo lo que está en tendencia
+        </h2>
+        <p class="texto-cuerpo reveal" data-reveal>
+          Desde 2018 hasta 2021 trabajé en el rubro del comercio, y ahí aprendí
+          la importancia de la dedicación y el esfuerzo. En 2022 di el
+          siguiente paso y arranqué mi propio camino en la importación.
+        </p>
+        <p class="texto-cuerpo reveal" data-reveal>
+          <!-- 
+            PENDIENTE DE DECISIÓN: falta confirmar si se van a nombrar
+            ejemplos concretos de productos (perfumes, celulares, PS5) 
+            para reforzar el ángulo de "tendencias", o si se deja más 
+            general sin nombrar productos puntuales. Ver conversación 
+            con el diseñador antes de cerrar este párrafo.
+          -->
+          No me especializo en un solo rubro: estoy siempre atento a lo
+          que se mueve, así que si tenés algo puntual en mente, hay
+          buenas chances de que pueda conseguírtelo.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- SECCIÓN 3 — CÓMO FUNCIONA / QUÉ OFRECE        -->
+    <!-- ============================================ -->
+    <section class="seccion" id="proceso" data-bg="proceso" data-stop="proceso">
+      <div class="seccion__contenido">
+        <p class="eyebrow reveal" data-reveal>02 — Cómo funciona</p>
+        <h2 class="titulo-seccion reveal" data-reveal>El trayecto de tu importación</h2>
+
+        <ol class="pasos">
+          <li class="paso reveal" data-reveal>
+            <span class="paso__num">01</span>
+            <div class="paso__texto">
+              <h3>Me contás tu idea</h3>
+              <p>Me contás qué producto tenés en mente y para qué lo necesitás. A partir de ahí, empiezo a buscar proveedores reales que puedan fabricarlo o venderlo al precio y la calidad que estás buscando.</p>
+            </div>
+          </li>
+          <li class="paso reveal" data-reveal>
+            <span class="paso__num">02</span>
+            <div class="paso__texto">
+              <h3>Negocio con los proveedores</h3>
+              <p>Contacto proveedores, comparo opciones y negocio directamente con ellos para conseguirte el mejor costo posible, sin que tengas que lidiar vos con ese proceso.</p>
+            </div>
+          </li>
+          <li class="paso reveal" data-reveal>
+            <span class="paso__num">03</span>
+            <div class="paso__texto">
+              <h3>Gestiono la importación completa</h3>
+              <p>Me encargo de todo el trámite: aduana, logística y envío, de principio a fin. Vos no tenés que ocuparte de la parte administrativa ni de los papeles.</p>
+            </div>
+          </li>
+          <li class="paso reveal" data-reveal>
+            <span class="paso__num">04</span>
+            <div class="paso__texto">
+              <h3>Te acompaño con la venta</h3>
+              <p>Cuando la mercadería llega, te comparto algunos tips prácticos para que puedas venderla mejor — no te dejo solo apenas te entrego el pedido.</p>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- SECCIÓN 4 — TESTIMONIOS                       -->
+    <!-- ============================================ -->
+    <section class="seccion seccion--testimonios" id="testimonios" data-bg="testimonios" data-stop="testimonios">
+      <div class="seccion__contenido">
+        <p class="eyebrow reveal" data-reveal>03 — Resultados</p>
+        <h2 class="titulo-seccion reveal" data-reveal>Clientes que ya llegaron a destino</h2>
+
+        <div class="testimonios-grid">
+          <!-- 
+            BLOQUE DE TESTIMONIO — repetir esta estructura por cada video 
+            que el cliente seleccione de los ~20 que va a recibir.
+            Video HORIZONTAL (ver guion de grabación enviado al cliente).
+          -->
+          <article class="testimonio reveal" data-reveal>
+            <div class="testimonio__video-wrap">
+              <video
+                class="testimonio__video"
+                poster="assets/img/testimonio-01-poster.jpg"
+                preload="none"
+                controls
+                playsinline>
+                <source src="assets/video/testimonio-01.mp4" type="video/mp4">
+                Tu navegador no soporta el elemento de video.
+              </video>
+            </div>
+            <div class="testimonio__texto">
+              <p class="testimonio__nombre">Nombre pendiente</p>
+              <p class="testimonio__detalle">Qué importó / rubro — resultado breve</p>
+            </div>
+          </article>
+
+          <article class="testimonio reveal" data-reveal>
+            <div class="testimonio__video-wrap">
+              <video
+                class="testimonio__video"
+                poster="assets/img/testimonio-02-poster.jpg"
+                preload="none"
+                controls
+                playsinline>
+                <source src="assets/video/testimonio-02.mp4" type="video/mp4">
+                Tu navegador no soporta el elemento de video.
+              </video>
+            </div>
+            <div class="testimonio__texto">
+              <p class="testimonio__nombre">Nombre pendiente</p>
+              <p class="testimonio__detalle">Qué importó / rubro — resultado breve</p>
+            </div>
+          </article>
+
+          <article class="testimonio reveal" data-reveal>
+            <div class="testimonio__video-wrap">
+              <video
+                class="testimonio__video"
+                poster="assets/img/testimonio-03-poster.jpg"
+                preload="none"
+                controls
+                playsinline>
+                <source src="assets/video/testimonio-03.mp4" type="video/mp4">
+                Tu navegador no soporta el elemento de video.
+              </video>
+            </div>
+            <div class="testimonio__texto">
+              <p class="testimonio__nombre">Nombre pendiente</p>
+              <p class="testimonio__detalle">Qué importó / rubro — resultado breve</p>
+            </div>
+          </article>
+
+          <!-- 
+            Duplicar el bloque .testimonio de arriba según cuántos de 
+            los ~20 videos terminen seleccionados para la página final.
+          -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================ -->
+    <!-- SECCIÓN 5 — CONTACTO                          -->
+    <!-- ============================================ -->
+    <section class="seccion" id="contacto" data-bg="contacto" data-stop="contacto">
+      <div class="seccion__contenido seccion__contenido--contacto">
+        <p class="eyebrow reveal" data-reveal>04 — Hablemos</p>
+        <h2 class="titulo-seccion reveal" data-reveal>¿Listo para importar?</h2>
+        <p class="texto-cuerpo reveal" data-reveal>
+          Escribime y charlamos sobre tu proyecto de importación.
+        </p>
+        <div class="contacto-links reveal" data-reveal>
+          <!-- 
+            PENDIENTE: reemplazar el href="#" por el link real de cada uno.
+            WhatsApp: usar formato https://wa.me/549XXXXXXXXXX (código país 
+            + código área sin 0 + número sin 15).
+            Instagram: usar el link directo al perfil, 
+            ej: https://instagram.com/usuario_de_juan
+            
+            Email SACADO a propósito: Juan confirmó que no quiere 
+            mostrarlo, solo WhatsApp e Instagram.
+          -->
+          <a href="#" class="contacto-link contacto-link--whatsapp" target="_blank" rel="noopener">
+            WhatsApp
+          </a>
+          <a href="#" class="contacto-link" target="_blank" rel="noopener">
+            Instagram
+          </a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="js/route-line.js"></script>
+  <script src="js/reveal.js"></script>
+  <script src="js/bg-transition.js"></script>
+  <script src="js/fondos.js"></script>
+  <script src="js/portada.js"></script>
+  <!--
+    Three.js build UMD clásico (no ES module) a propósito: así la intro
+    funciona también abriendo index.html directo con doble clic
+    (file://), sin depender de que el sitio esté en un servidor.
+    Tira un console.warn de "deprecated" — inofensivo, es solo un aviso.
+  -->
+  <script src="assets/js/vendor/three.min.js"></script>
+  <script src="js/continentes-data.js"></script>
+  <script src="js/intro-globe.js"></script>
+  <!-- Después de continentes-data.js: reusa esos mismos polígonos -->
+  <script src="js/mapa-mundi.js"></script>
+</body>
+</html>

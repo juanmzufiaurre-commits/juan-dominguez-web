@@ -1,0 +1,240 @@
+/* ===================================================================
+   FONDOS FOTOGRÁFICOS POR SECCIÓN
+   ===================================================================
+   Cada sección lleva una foto real del cliente detrás del contenido.
+   Las fotos NO reemplazan al sistema de fondos que ya existía: el
+   degradé del <body> que aplica js/bg-transition.js sigue funcionando
+   igual, debajo, y se ve mientras la foto todavía no cargó.
+
+   POR QUÉ PSEUDO-ELEMENTOS Y NO <div>: así el HTML no cambia. La
+   estructura y el orden de las secciones quedan intactos; toda la
+   capa de fondo vive en CSS.
+
+     .seccion::before  → la foto (es la capa que se anima)
+     .seccion::after   → overlay de color + viñeta (queda quieta)
+     .seccion__contenido → el contenido, siempre por encima de las dos
+
+   La foto va en ::before y el overlay en ::after a propósito: cuando
+   la foto se mueva con el parallax y escale con el zoom (fase de
+   animación, ver js/fondos.js), el overlay NO se mueve con ella. Si
+   compartieran capa, al desplazarse el degradé dejaría ver los bordes
+   de la foto sin atenuar.
+
+   La geometría de la foto (--fondo-extension) está calculada junto al
+   factor de parallax de js/fondos.js — ver la nota en esa constante.
+   =================================================================== */
+
+/* El zoom de entrada va por custom property para poder combinarlo con
+   el desplazamiento del parallax en un solo transform. Registrarla con
+   @property es lo que la vuelve animable: sin esto, una custom property
+   sin tipo salta de 1.08 a 1 de una, en vez de transicionar.
+   Si el navegador no soporta @property, el zoom salta pero el fade
+   sigue funcionando — degrada, no rompe. */
+@property --fondo-escala {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 1;
+}
+
+.seccion {
+  /* SIN isolation: isolate a propósito.
+     Si la sección creara contexto de apilamiento propio, sus capas
+     quedarían encerradas y el canvas del mapa (fixed, ver css/mapa.css)
+     solo podría ir por encima de TODO o por debajo de TODO.
+     Dejándola sin aislar, las tres capas compiten en el contexto raíz
+     y el mapa puede meterse justo en el medio:
+
+        z-index 0  → foto y overlay de la sección
+        z-index 1  → canvas del mapa punteado
+        z-index 2  → el contenido de texto
+
+     El recorte sigue funcionando igual porque lo hace overflow, que es
+     geométrico y no depende del apilamiento. */
+
+  /* La foto es más alta que la sección (ver --fondo-extension) y encima
+     escala: sin esto se desbordaría sobre las secciones vecinas. */
+  overflow: hidden;
+}
+
+.seccion[data-bg]::before,
+.seccion[data-bg]::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* -------------------------------------------------
+   CAPA 1 — LA FOTO
+   -------------------------------------------------
+   Se extiende --fondo-extension por arriba y por abajo de la sección.
+   Ese margen es el que consume el desplazamiento del parallax: sin él,
+   al correr la foto hacia arriba quedaría una franja vacía abajo.
+   30% cubre el recorrido máximo del factor 0.25 de js/fondos.js. */
+
+.seccion[data-bg]::before {
+  --fondo-extension: 30%;
+
+  top: calc(var(--fondo-extension) * -1);
+  height: calc(100% + var(--fondo-extension) * 2);
+
+  background-image: var(--fondo-img);
+  /* cover + center: llena la caja sin deformar la foto (las 5 son
+     verticales 3:4, así que en desktop se recortan arriba y abajo).
+     El eje vertical se afina foto por foto más abajo. */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  /* scroll, nunca fixed: background-attachment: fixed es justamente lo
+     que produce jank y saltos en iOS. El parallax se hace con
+     transform, que va por GPU. */
+  background-attachment: scroll;
+
+  /* --------- ESTADO INICIAL DE LA ANIMACIÓN ---------
+     Arranca invisible y un poco más grande. js/fondos.js agrega
+     .is-fondo-visible cuando la sección entra en viewport y desde ahí
+     baja a escala 1 mientras aparece. */
+  opacity: 0;
+  --fondo-escala: var(--fondo-escala-entrada);
+
+  /* Un solo transform con las dos cosas:
+       --fondo-y     → parallax, lo reescribe js/fondos.js en cada frame
+       --fondo-escala → zoom de entrada, lo transiciona el CSS
+     translate3d y no translateY: fuerza capa propia en GPU, así el
+     scroll no repinta nada. */
+  transform: translate3d(0, var(--fondo-y, 0px), 0) scale(var(--fondo-escala));
+
+  /* Solo opacity y la escala tienen transición. --fondo-y NO está en la
+     lista a propósito: se actualiza frame a frame y una transición
+     encima le agregaría un retardo que se ve como "goma". */
+  transition: opacity var(--duracion-fondo-entrada) var(--easing-estandar),
+              --fondo-escala var(--duracion-fondo-entrada) var(--easing-estandar);
+
+  will-change: transform, opacity;
+}
+
+.seccion[data-bg].is-fondo-visible::before {
+  opacity: 1;
+  --fondo-escala: 1;
+}
+
+/* -------------------------------------------------
+   CAPA 2 — OVERLAY DE COLOR + VIÑETA
+   -------------------------------------------------
+   Dos degradés apilados: arriba la viñeta común, abajo el overlay de
+   color propio de la sección. Los alphas están calibrados para WCAG AA
+   sobre el punto más claro de cada foto — ver la nota en css/tokens.css
+   antes de bajarlos. */
+
+.seccion[data-bg]::after {
+  top: 0;
+  height: 100%;
+  background-image: var(--fondo-vineta), var(--fondo-overlay);
+}
+
+/* -------------------------------------------------
+   CONTENIDO POR ENCIMA
+   ------------------------------------------------- */
+
+/* z-index 2 y no 1: el 1 lo ocupa el canvas del mapa, que va por encima
+   de los fondos pero siempre por debajo del texto. */
+.seccion__contenido {
+  position: relative;
+  z-index: 2;
+}
+
+/* -------------------------------------------------
+   ASIGNACIÓN FOTO ↔ SECCIÓN
+   -------------------------------------------------
+   La clave de cada archivo coincide con data-bg del <section> y con el
+   nombre del token --bg-* (hero, dedica, proceso, testimonios,
+   contacto), así los tres nombres se leen juntos.
+
+   background-position vertical afinado por foto: las 5 son verticales
+   y en desktop la caja es apaisada, así que el recorte decide qué
+   queda dentro. El valor busca que el sujeto no quede cortado. */
+
+/* El Hero NO lleva foto de fondo: tiene su propia composición (panel,
+   recorte y tarjetas, ver css/portada.css) y encima el mapa punteado.
+   Una quinta foto ahí sería ruido. bg-hero.jpg sigue en assets por si
+   se la quiere recuperar: alcanza con devolver el --fondo-img. */
+.seccion[data-bg='hero'] {
+  --fondo-overlay: var(--fondo-overlay-hero);
+}
+
+.seccion[data-bg='dedica'] {
+  --fondo-img: url('../assets/img/bg-dedica.jpg');
+  --fondo-overlay: var(--fondo-overlay-dedica);
+}
+
+/* Centrado en la pirámide de cajas */
+.seccion[data-bg='dedica']::before {
+  background-position: center 46%;
+}
+
+.seccion[data-bg='proceso'] {
+  --fondo-img: url('../assets/img/bg-proceso.jpg');
+  --fondo-overlay: var(--fondo-overlay-proceso);
+}
+
+/* Deja los dos carteles del local dentro del encuadre */
+.seccion[data-bg='proceso']::before {
+  background-position: center 44%;
+}
+
+.seccion[data-bg='testimonios'] {
+  --fondo-img: url('../assets/img/bg-testimonios.jpg');
+  --fondo-overlay: var(--fondo-overlay-testimonios);
+}
+
+/* El auto ocupa la mitad de abajo de la foto */
+.seccion[data-bg='testimonios']::before {
+  background-position: center 58%;
+}
+
+.seccion[data-bg='contacto'] {
+  --fondo-img: url('../assets/img/bg-contacto.jpg');
+  --fondo-overlay: var(--fondo-overlay-contacto);
+}
+
+.seccion[data-bg='contacto']::before {
+  background-position: center 50%;
+}
+
+/* -------------------------------------------------
+   MOBILE
+   -------------------------------------------------
+   El parallax se apaga por debajo de 768px (js/fondos.js no engancha
+   el listener de scroll). Motivo: en mobile la barra de direcciones
+   aparece y desaparece al scrollear, lo que cambia innerHeight a mitad
+   del gesto y hace que la foto pegue un salto. El fade-in con zoom sí
+   se mantiene: es una transición de entrada, no depende del scroll.
+
+   Con el parallax apagado no hace falta reservar margen para el
+   desplazamiento, así que la extensión baja de 30% a 8% (lo justo para
+   absorber el zoom) y la foto se recorta bastante menos. */
+
+@media (max-width: 768px) {
+  .seccion[data-bg]::before {
+    --fondo-extension: 8%;
+  }
+}
+
+/* -------------------------------------------------
+   ACCESIBILIDAD — movimiento reducido
+   -------------------------------------------------
+   Si el usuario pidió menos movimiento: la foto se muestra fija, sin
+   parallax, sin zoom y sin fade. No se oculta la imagen, solo se
+   apaga el movimiento. Mismo criterio que el resto del sitio. */
+
+@media (prefers-reduced-motion: reduce) {
+  .seccion[data-bg]::before {
+    opacity: 1;
+    --fondo-escala: 1;
+    transform: none;
+    transition: none;
+    will-change: auto;
+  }
+}

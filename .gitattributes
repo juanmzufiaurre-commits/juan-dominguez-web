@@ -1,0 +1,14 @@
+# Normaliza los finales de línea: se guardan en LF en el repositorio y git
+# los adapta a cada sistema al descargar. Sin esto, un mismo archivo editado
+# en Windows y en Mac aparece como "cambiado por completo" aunque no se haya
+# tocado una sola letra.
+* text=auto eol=lf
+
+# Binarios: que git no intente convertir nada ni mostrarlos como texto
+*.jpg  binary
+*.jpeg binary
+*.png  binary
+*.webp binary
+*.mp4  binary
+*.woff binary
+*.woff2 binary

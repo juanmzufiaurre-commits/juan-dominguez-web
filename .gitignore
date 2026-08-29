@@ -1,0 +1,24 @@
+# Configuración local de Claude Code — es de esta máquina, no del sitio
+.claude/
+
+# Windows
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# macOS (por si el proyecto pasa por otra máquina)
+.DS_Store
+
+# Editores
+.vscode/
+.idea/
+*.swp
+*~
+
+# Node — el proyecto no usa build, pero si algún día se suma una
+# herramienta de desarrollo, que no se suba la carpeta de paquetes
+node_modules/
+npm-debug.log*
+
+# Vercel
+.vercel

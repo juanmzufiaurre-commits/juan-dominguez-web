@@ -1,0 +1,180 @@
+/* ===================================================================
+   LÍNEA DE RUTA — signature element
+   ===================================================================
+   Representa el "trayecto" de una importación: origen → rubro →
+   proceso → destino (testimonios) → contacto.
+
+   Criterio de diseño: hilo fino pegado al borde izquierdo, que se va
+   pintando con el scroll, y puntos huecos que se rellenan cuando esa
+   sección está activa. Nada de bloques sólidos.
+
+   GEOMETRÍA (importante): el riel arranca y termina EXACTAMENTE en el
+   centro del primer y del último punto. Como las paradas se reparten
+   con space-between y cada una mide --fila-alto, el centro de la
+   primera queda a --fila-alto / 2 del tope: ese mismo valor es el
+   inset del riel. Así la barra y los puntos empiezan a la par.
+
+   El progreso lo controla js/route-line.js escribiendo UNA custom
+   property (--route-progreso, de 0 a 1) sobre el <nav>. El CSS decide
+   qué hacer con ese número según el breakpoint — en desktop escala en
+   Y, en mobile en X. Importante: el JS NO escribe width/height inline,
+   porque un estilo inline le gana a la hoja de estilos y era
+   justamente lo que deformaba la barra hasta convertirla en un bloque.
+   =================================================================== */
+
+.route-line {
+  --route-progreso: 0;
+  --riel-grosor: 2px;
+  --punto-tam: 9px;
+  --fila-alto: 1.4rem;
+
+  position: fixed;
+  left: 1.15rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 50;
+  height: 58vh;
+  max-height: 30rem;
+  pointer-events: none; /* solo los enlaces reciben el mouse */
+}
+
+/* -------------------------------------------------
+   RIEL + RELLENO
+   ------------------------------------------------- */
+
+.route-line__riel {
+  position: absolute;
+  left: 0;
+  /* Alineado con el centro del primer y último punto (ver nota arriba) */
+  top: calc(var(--fila-alto) / 2);
+  bottom: calc(var(--fila-alto) / 2);
+  width: var(--riel-grosor);
+  border-radius: var(--riel-grosor);
+  background: var(--route-line-color-base);
+}
+
+.route-line__fill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--route-line-color-fill);
+  transform: scaleY(var(--route-progreso));
+  transform-origin: top center;
+  transition: transform 180ms linear;
+}
+
+/* -------------------------------------------------
+   PARADAS
+   ------------------------------------------------- */
+
+.route-line__stops {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.route-line__stop a {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  min-height: var(--fila-alto);
+  /* Centra el punto sobre el riel */
+  margin-left: calc((var(--riel-grosor) - var(--punto-tam)) / 2);
+  text-decoration: none;
+  pointer-events: auto;
+  width: fit-content;
+}
+
+/* Punto: hueco por defecto, se rellena al estar activo/pasado */
+.route-line__punto {
+  width: var(--punto-tam);
+  height: var(--punto-tam);
+  flex: none;
+  border-radius: 50%;
+  border: var(--riel-grosor) solid var(--route-line-color-base);
+  background: var(--color-base-900);
+  transition: background-color 320ms var(--easing-estandar),
+              border-color 320ms var(--easing-estandar),
+              transform 320ms var(--easing-estandar);
+}
+
+.route-line__label {
+  font-family: var(--font-display);
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--color-texto-claro);
+  opacity: 0.32;
+  transition: opacity 320ms var(--easing-estandar);
+}
+
+/* Ya recorridas: punto pintado, etiqueta todavía discreta */
+.route-line__stop.is-passed .route-line__punto {
+  background: var(--route-line-color-fill);
+  border-color: var(--route-line-color-fill);
+}
+
+/* Activa: punto pleno y etiqueta legible */
+.route-line__stop.is-active .route-line__punto {
+  background: var(--route-line-color-fill);
+  border-color: var(--route-line-color-fill);
+  transform: scale(1.3);
+}
+
+.route-line__stop.is-active .route-line__label {
+  opacity: 1;
+}
+
+.route-line__stop a:hover .route-line__label,
+.route-line__stop a:focus-visible .route-line__label {
+  opacity: 0.85;
+}
+
+/* -------------------------------------------------
+   MOBILE — hilo horizontal fijo arriba.
+   En pantallas chicas, 5 etiquetas verticales tapan contenido; una
+   línea de progreso al ras del borde superior comunica lo mismo.
+   ------------------------------------------------- */
+
+@media (max-width: 768px) {
+  .route-line {
+    left: 0;
+    right: 0;
+    top: 0;
+    transform: none;
+    height: auto;
+    max-height: none;
+  }
+
+  .route-line__riel {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: 3px;
+    border-radius: 0;
+  }
+
+  .route-line__fill {
+    transform: scaleX(var(--route-progreso));
+    transform-origin: left center;
+  }
+
+  .route-line__stops {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-line__fill,
+  .route-line__punto,
+  .route-line__label {
+    transition: none;
+  }
+}

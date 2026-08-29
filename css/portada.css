@@ -1,0 +1,514 @@
+/* ===================================================================
+   PORTADA — Hero de presentación
+   ===================================================================
+   La primera pantalla después de que la intro 3D se desvanece.
+   Dos columnas: el copy a la izquierda, Juan recortado a la derecha
+   con un aro geométrico detrás y dos tarjetas de vidrio flotando.
+
+   En mobile pasa a una sola columna con la foto arriba: no es el
+   desktop apretado, es otra composición.
+
+   Depende de los tokens de css/tokens.css (paleta, vidrio, espaciado)
+   y de js/portada.js (contadores).
+   =================================================================== */
+
+.seccion--portada {
+  /* La portada trae su propia composición, así que la viñeta común de
+     fondos.css sobraría acá arriba. */
+  padding-top: clamp(5rem, 12vh, 8rem);
+  padding-bottom: clamp(3rem, 8vh, 5rem);
+}
+
+.portada {
+  display: grid;
+  /* La columna del copy pesa más: el recorte de Juan es una figura
+     alta y angosta (relación 0.46), así que aunque se le dé mucho
+     ancho no lo usa — lo llena el aro, no la foto. */
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  align-items: center;
+  gap: clamp(var(--e6), 5vw, var(--e9));
+  width: 100%;
+}
+
+/* -------------------------------------------------
+   COLUMNA IZQUIERDA — el copy
+   ------------------------------------------------- */
+
+.portada__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--e5);
+}
+
+/* El rótulo lleva un filete a la izquierda, como una marca de sello */
+.portada__copy .eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--e3);
+  margin-bottom: 0;
+}
+
+.portada__copy .eyebrow::before {
+  content: '';
+  width: 32px;
+  height: 1px;
+  background: var(--color-acento-hondo);
+  flex-shrink: 0;
+}
+
+.portada__titular {
+  font-family: var(--font-display);
+  font-size: var(--size-titular);
+  font-weight: 400;
+  line-height: 1.06;
+  letter-spacing: -0.02em;
+  color: var(--color-texto-claro);
+  margin: 0;
+  max-width: 15ch;
+  text-wrap: balance;
+}
+
+/* "China y Paraguay" — el acento va acá y en ningún otro lado del
+   titular. Un solo punto de color, para que efectivamente destaque. */
+.portada__titular em {
+  font-style: normal;
+  color: var(--color-acento);
+  /* Resplandor muy leve: da la sensación de metal sin volverse neón */
+  text-shadow: 0 0 28px rgba(217, 167, 60, 0.28);
+}
+
+.portada__firma {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--size-bajada);
+  color: var(--color-texto-claro-muted);
+  margin: 0;
+}
+
+.portada__bajada {
+  font-size: var(--size-cuerpo);
+  line-height: 1.65;
+  color: var(--color-texto-claro-muted);
+  margin: 0;
+  max-width: 46ch;
+}
+
+/* -------------------------------------------------
+   DATOS DE AUTORIDAD
+   ------------------------------------------------- */
+
+.portada__datos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e6);
+  margin: var(--e2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dato {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e1);
+  padding-left: var(--e4);
+  border-left: 1px solid var(--color-borde);
+}
+
+.dato__valor {
+  font-family: var(--font-display);
+  font-size: var(--size-dato);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--color-texto-claro);
+  /* Los dígitos no bailan mientras el contador sube */
+  font-variant-numeric: tabular-nums;
+}
+
+.dato__etiqueta {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-texto-tenue);
+  line-height: 1.4;
+}
+
+/* -------------------------------------------------
+   BOTONES
+   ------------------------------------------------- */
+
+.portada__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e5);
+  margin-top: var(--e2);
+}
+
+.boton-primario {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  /* 44px de alto mínimo: regla de touch target de la skill */
+  min-height: 48px;
+  padding: 0 var(--e6);
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--color-acento-suave) 0%, var(--color-acento) 100%);
+  color: #221803; /* casi negro cálido: 9,1:1 sobre el latón */
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: box-shadow 320ms var(--easing-salida),
+              transform 320ms var(--easing-salida);
+}
+
+.boton-primario:hover,
+.boton-primario:focus-visible {
+  /* El glow se expande hacia afuera; el botón no cambia de tamaño,
+     así que no empuja nada de alrededor. */
+  box-shadow: 0 0 36px rgba(217, 167, 60, 0.5),
+              0 0 0 1px rgba(240, 200, 104, 0.4);
+  transform: translateY(-1px);
+}
+
+.boton-primario svg {
+  transition: transform 320ms var(--easing-salida);
+}
+
+.boton-primario:hover svg {
+  transform: translateX(3px);
+}
+
+.boton-secundario {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  color: var(--color-texto-claro);
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+/* Subrayado que se dibuja de izquierda a derecha */
+.boton-secundario::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 12px;
+  height: 1px;
+  background: var(--color-acento);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 340ms var(--easing-salida);
+}
+
+.boton-secundario:hover::after,
+.boton-secundario:focus-visible::after {
+  transform: scaleX(1);
+}
+
+/* -------------------------------------------------
+   COLUMNA DERECHA — la foto
+   ------------------------------------------------- */
+
+.portada__visual {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: clamp(380px, 58vh, 620px);
+  /* Deja aire arriba para que la etiqueta flote SOBRE la cabeza y no
+     encima de la cara. Sin esto la píldora cae justo sobre los ojos. */
+  padding-top: 60px;
+  /* La perspectiva vive acá y no en el plano: si estuviera en el plano,
+     el punto de fuga se movería con él y la inclinación se sentiría
+     plana. Acá el observador queda quieto y el plano gira delante. */
+  perspective: 1100px;
+  perspective-origin: 50% 45%;
+}
+
+/* -------------------------------------------------
+   PLANO 3D — panel + foto
+   -------------------------------------------------
+   Las dos capas viven a distinta profundidad (translateZ). Cuando el
+   plano se inclina, la perspectiva produce el parallax entre ellas por
+   sí sola: no hay que desplazarlas por separado en JS.
+
+   Los ángulos los escribe js/portada.js en --plano-x / --plano-y. */
+
+.portada__plano {
+  position: relative;
+  transform-style: preserve-3d;
+  transform:
+    rotateX(var(--plano-x, 0deg))
+    rotateY(var(--plano-y, 0deg));
+  /* Sin transition: js/portada.js interpola con lerp frame a frame, y
+     una transición encima le agregaría un retardo de goma. */
+  will-change: transform;
+}
+
+/* El rectángulo redondeado de atrás. Arranca más abajo que la foto
+   para que la cabeza sobresalga por arriba, como en el boceto. */
+.portada__panel {
+  position: absolute;
+  top: 13%;
+  right: 4%;
+  bottom: -2%;
+  left: 4%;
+  border-radius: 26px;
+  background:
+    /* Brillo suave arriba a la izquierda: da volumen de placa */
+    radial-gradient(120% 80% at 22% 8%, rgba(242, 244, 248, 0.09) 0%, rgba(242, 244, 248, 0) 55%),
+    linear-gradient(158deg, #16213A 0%, #0D1626 58%, #0A1220 100%);
+  border: 1px solid rgba(242, 244, 248, 0.07);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+  /* Al fondo del plano: es la capa lejana del parallax */
+  transform: translateZ(0);
+}
+
+/* Trama de puntos sobre el panel, del mismo lenguaje que el mapa de
+   fondo — ata el hero con el resto de la página. */
+.portada__panel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image: radial-gradient(rgba(242, 244, 248, 0.13) 1px, transparent 1px);
+  background-size: 14px 14px;
+  /* Se desvanece hacia abajo para no competir con el fade de la foto */
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 78%);
+  mask-image: linear-gradient(to bottom, #000 0%, transparent 78%);
+  opacity: 0.6;
+}
+
+.portada__foto {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: auto;
+  max-width: 100%;
+  max-height: clamp(340px, 62vh, 600px);
+  height: auto;
+  object-fit: contain;
+  /* Adelante del panel: es la capa cercana del parallax. 52px con una
+     perspectiva de 1100px da una separación que se nota sin que la
+     foto parezca despegada. */
+  transform: translateZ(52px);
+  /* La sombra sigue el contorno recortado, no una caja rectangular */
+  filter: drop-shadow(0 26px 40px rgba(0, 0, 0, 0.55));
+  /* El recorte termina en un corte recto a la altura de la cintura;
+     el degradado lo disuelve para que no se lea como un tijeretazo. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 58%, rgba(0, 0, 0, 0.55) 82%, transparent 99%);
+  mask-image: linear-gradient(to bottom, #000 58%, rgba(0, 0, 0, 0.55) 82%, transparent 99%);
+}
+
+/* Aro punteado detrás de Juan. Es decorativo puro, va oculto para
+   lectores de pantalla. */
+.portada__aro {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(88%, 460px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border: 1px dashed rgba(217, 167, 60, 0.28);
+  border-radius: 50%;
+  animation: portada-giro 90s linear infinite;
+}
+
+/* Un segundo aro, más chico y sin puntear, para dar profundidad */
+.portada__aro::before {
+  content: '';
+  position: absolute;
+  inset: 9%;
+  border: 1px solid rgba(242, 244, 248, 0.06);
+  border-radius: 50%;
+}
+
+/* Halo cálido: despega a Juan del fondo sin recortarlo con una caja */
+.portada__aro::after {
+  content: '';
+  position: absolute;
+  inset: -14%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(217, 167, 60, 0.13) 0%, rgba(217, 167, 60, 0) 62%);
+  animation: portada-pulso 7s ease-in-out infinite;
+}
+
+@keyframes portada-giro {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes portada-pulso {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50%      { opacity: 1;    transform: scale(1.04); }
+}
+
+/* -------------------------------------------------
+   TARJETAS DE VIDRIO
+   ------------------------------------------------- */
+
+.vidrio {
+  position: absolute;
+  z-index: 2;
+  background: var(--vidrio-fondo);
+  border: var(--vidrio-borde);
+  -webkit-backdrop-filter: var(--vidrio-blur);
+  backdrop-filter: var(--vidrio-blur);
+  box-shadow: var(--vidrio-sombra);
+}
+
+.vidrio--etiqueta {
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--e3);
+  padding: var(--e3) var(--e5);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-texto-claro);
+  white-space: nowrap;
+}
+
+.vidrio__punto {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-acento);
+  flex-shrink: 0;
+  box-shadow: 0 0 10px rgba(217, 167, 60, 0.8);
+}
+
+.vidrio--testimonio {
+  /* Abajo y desbordando a la derecha, como en el boceto: se apoya en
+     la esquina en vez de caerle encima a Juan. */
+  right: -7%;
+  bottom: 0;
+  width: min(70%, 260px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  padding: var(--e5);
+  border-radius: 12px;
+  /* Levitación continua muy corta: 6px de recorrido, sin llamar la
+     atención. Se apaga con reduced-motion más abajo. */
+  animation: portada-levita 6s ease-in-out infinite;
+}
+
+@keyframes portada-levita {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+.vidrio__estrellas {
+  color: var(--color-acento-suave);
+  font-size: 0.75rem;
+  letter-spacing: 2px;
+  line-height: 1;
+}
+
+.vidrio__cita {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--color-texto-claro);
+  font-style: normal;
+  margin: 0;
+}
+
+.vidrio__autor {
+  font-size: 0.6875rem;
+  font-style: normal;
+  color: var(--vidrio-texto-tenue);
+}
+
+/* -------------------------------------------------
+   RESPONSIVE
+   -------------------------------------------------
+   Mobile no es el desktop apretado: la foto pasa arriba y más chica,
+   el copy queda abajo con la lectura completa, y las tarjetas se
+   reubican para no taparle la cara. */
+
+@media (max-width: 900px) {
+  .portada {
+    grid-template-columns: 1fr;
+    gap: var(--e6);
+  }
+
+  /* La foto primero, el copy después */
+  .portada__visual { order: -1; min-height: clamp(300px, 42vh, 420px); }
+
+  .portada__foto { max-height: clamp(300px, 44vh, 440px); }
+
+  .portada__titular { max-width: 100%; }
+
+  .vidrio--testimonio {
+    right: 0;
+    bottom: 0;
+    width: min(78%, 240px);
+  }
+}
+
+@media (max-width: 560px) {
+  .portada__datos {
+    gap: var(--e5);
+  }
+
+  .dato__valor { font-size: 1.75rem; }
+
+  /* La etiqueta superior se achica para no desbordar en 375px */
+  .vidrio--etiqueta {
+    font-size: 0.6875rem;
+    padding: var(--e2) var(--e4);
+  }
+
+  .vidrio--testimonio {
+    width: min(84%, 220px);
+    padding: var(--e4);
+  }
+
+  .portada__acciones {
+    gap: var(--e4);
+  }
+
+  .boton-primario { width: 100%; justify-content: center; }
+}
+
+/* -------------------------------------------------
+   ACCESIBILIDAD — movimiento reducido
+   -------------------------------------------------
+   Se apagan las tres animaciones continuas (giro del aro, pulso del
+   halo, levitación de la tarjeta). El diseño queda idéntico, quieto. */
+
+@media (prefers-reduced-motion: reduce) {
+  .portada__aro,
+  .portada__aro::after,
+  .vidrio--testimonio {
+    animation: none;
+  }
+
+  /* El plano queda de frente, sin inclinación. El panel y el fade de
+     la foto se mantienen: son composición, no movimiento. */
+  .portada__plano {
+    transform: none;
+    will-change: auto;
+  }
+
+  .boton-primario,
+  .boton-primario svg,
+  .boton-secundario::after {
+    transition: none;
+  }
+}

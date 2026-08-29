@@ -1,0 +1,173 @@
+/* ===================================================================
+   TOKENS DE DISEÑO — sistema "Navy & Latón"
+   ===================================================================
+   Sistema de diseño pensado para un importador: la paleta y las formas
+   se inspiran en el mundo de la carga marítima y el comercio exterior
+   (rutas, sellos de aduana, contenedores) en vez de una estética
+   genérica de "landing de agencia".
+
+   El latón es el metal de los sellos de aduana y los precintos de
+   contenedor — sale del rubro, no de "poner dorado porque queda caro".
+
+   POR QUÉ SE CAMBIÓ LA PALETA ANTERIOR (azul + terracota #C4622D):
+   la terracota sobre el azul daba 3,66:1 de contraste y WCAG AA pide
+   4,5:1 para texto chico, así que TODOS los rótulos .eyebrow fallaban
+   accesibilidad. El latón sobre el nuevo azul da 8,43:1. El cambio no
+   es solo estético: arregla un incumplimiento real.
+
+   Los nombres de las variables se mantuvieron iguales a propósito:
+   cambian los valores, no las claves, así ningún otro archivo se rompe.
+
+   Cambiar valores ACÁ se propaga a todo el sitio — evitar hardcodear
+   colores o tamaños sueltos en otros archivos CSS.
+   =================================================================== */
+
+:root {
+
+  /* -------------------------------------------------
+     COLOR
+     ------------------------------------------------- */
+
+  /* Base: azul de medianoche, más profundo y más frío que el anterior.
+     De más hondo a más elevado. */
+  --color-base-900: #070B14;  /* abismo — fondo de página */
+  --color-base-800: #0C1322;  /* noche — superficie principal */
+  --color-base-700: #131D33;  /* profundo — superficie elevada, tarjetas */
+  --color-borde:    #22304D;  /* líneas de 1px, separadores */
+
+  /* Acento: latón. Contrastes medidos sobre --color-base-800:
+     latón 8,43:1 · latón claro 11,73:1 — los dos pasan AAA. */
+  --color-acento: #D9A73C;
+  --color-acento-suave: #F0C868; /* hover, glow, estrellas */
+  --color-acento-hondo: #8A6A1E; /* bordes de acento, filetes */
+
+  /* Texto sobre fondo oscuro */
+  --color-texto-claro: #F2F4F8;        /* 16,85:1 */
+  --color-texto-claro-muted: #A8B2C6;  /* 8,72:1 */
+  --color-texto-tenue: #7B8AA5;        /* 5,32:1 — metadatos */
+
+  /* Texto sobre fondo claro (si se usa alguna sección clara) */
+  --color-texto-oscuro: #0C0A09;
+
+  /* Señal positiva — usado con moderación (WhatsApp, resultados) */
+  --color-exito: #45A06A;
+
+  /* Neutros de apoyo */
+  --color-gris-100: #F2F4F8;
+  --color-gris-300: #C3CCDB;
+  --color-gris-600: #7B8AA5;
+
+  /* -------------------------------------------------
+     FONDOS POR SECCIÓN
+     -------------------------------------------------
+     Cada sección tiene su propio fondo. Estos son los 5 valores que
+     bg-transition.js va a ir aplicando a <body> según qué sección esté
+     activa (ver js/bg-transition.js).
+
+     Las fotos del cliente entraron como capa propia dentro de cada
+     sección (ver css/fondos.css), no acá. Estos degradés siguen
+     vigentes como color de respaldo del <body>: se ven mientras la
+     foto de una sección todavía no cargó, y son la base de los
+     overlays de abajo.
+     */
+  --bg-hero: linear-gradient(160deg, #070B14 0%, #0C1322 100%);
+  --bg-dedica: linear-gradient(160deg, #0C1322 0%, #131D33 100%);
+  --bg-proceso: linear-gradient(160deg, #070B14 0%, #131D33 60%, #0C1322 100%);
+  --bg-testimonios: linear-gradient(160deg, #05080F 0%, #0C1322 100%);
+  --bg-contacto: linear-gradient(160deg, #0C1322 0%, #070B14 100%);
+
+  /* -------------------------------------------------
+     OVERLAYS SOBRE LAS FOTOS DE FONDO
+     -------------------------------------------------
+     Un overlay por sección, con los MISMOS colores del --bg-* de arriba
+     pero con alpha: así cada sección conserva su identidad de color
+     aunque tenga una foto detrás.
+
+     Sobre el alpha: no es un número estético, sale de medir contraste.
+     El caso peor de estas fotos es casi blanco puro (la pared y las
+     cajas de PS5, el cielo del jet ski). Con el texto de cuerpo
+     --color-texto-claro-muted sobre el tono MÁS CLARO de la paleta
+     hace falta este alpha para llegar a 4,5:1 (WCAG AA).
+     Bajar estos valores deja ver más la foto pero rompe AA. */
+  --fondo-overlay-hero: linear-gradient(160deg, rgba(7, 11, 20, 0.95) 0%, rgba(12, 19, 34, 0.93) 100%);
+  --fondo-overlay-dedica: linear-gradient(160deg, rgba(12, 19, 34, 0.90) 0%, rgba(7, 11, 20, 0.90) 100%);
+  --fondo-overlay-proceso: linear-gradient(160deg, rgba(7, 11, 20, 0.92) 0%, rgba(19, 29, 51, 0.88) 60%, rgba(12, 19, 34, 0.90) 100%);
+  --fondo-overlay-testimonios: linear-gradient(160deg, rgba(5, 8, 15, 0.93) 0%, rgba(12, 19, 34, 0.89) 100%);
+  --fondo-overlay-contacto: linear-gradient(160deg, rgba(12, 19, 34, 0.90) 0%, rgba(7, 11, 20, 0.92) 100%);
+
+  /* Viñeta común encima del overlay: densifica arriba y abajo, donde
+     el texto se acerca a los bordes. Mismo recurso que .intro::after. */
+  --fondo-vineta: linear-gradient(to bottom, rgba(7, 11, 20, 0.35) 0%, rgba(7, 11, 20, 0) 20%, rgba(7, 11, 20, 0) 78%, rgba(7, 11, 20, 0.45) 100%);
+
+  /* -------------------------------------------------
+     VIDRIO (glassmorphism)
+     -------------------------------------------------
+     Las tarjetas flotantes del Hero. La skill ui-ux-pro-max especifica
+     "blanco translúcido 0.1–0.3 + blur 10–20px", pero esa fórmula es
+     la de modo CLARO: sobre fondo oscuro, y peor todavía con la foto
+     recortada detrás, el texto se cae por debajo de 4,5:1.
+
+     Acá se usa vidrio de tinte OSCURO: un piso de azul opaco al 0.82
+     garantiza legibilidad pase lo que pase por detrás (medido: 8,4:1
+     contra blanco puro), y encima el velo blanco aporta el brillo de
+     vidrio. Es la traducción correcta de la misma intención a dark. */
+  --vidrio-fondo: linear-gradient(155deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.03) 100%), rgba(9, 14, 26, 0.82);
+  --vidrio-borde: 1px solid rgba(255, 255, 255, 0.14);
+  --vidrio-blur: blur(18px) saturate(1.3);
+  --vidrio-sombra: 0 18px 44px rgba(0, 0, 0, 0.45);
+  --vidrio-texto-tenue: #C3CCDB; /* 5,83:1 sobre el vidrio */
+
+  /* -------------------------------------------------
+     TIPOGRAFÍA
+     -------------------------------------------------
+     Display: Fraunces — serif con terminaciones ligeramente irregulares
+     y eje óptico (opsz), que engorda los trazos en tamaños chicos y los
+     afina en titulares grandes. Tiene personalidad propia en vez del
+     lujo genérico de una serif clásica.
+     Cuerpo: Inter, la grotesca neutra más legible en párrafos largos. */
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  --size-eyebrow: 0.75rem;
+  --size-titular: clamp(2.5rem, 5.2vw, 4.25rem);
+  --size-titulo-seccion: clamp(2rem, 4vw, 3rem);
+  --size-bajada: clamp(1.05rem, 1.6vw, 1.25rem);
+  --size-cuerpo: clamp(0.95rem, 1.05vw, 1.0625rem);
+  --size-dato: clamp(1.75rem, 3vw, 2.5rem);
+
+  --tracking-eyebrow: 0.18em;
+
+  /* -------------------------------------------------
+     ESPACIADO — base 4px
+     ------------------------------------------------- */
+  --e1: 4px;   --e2: 8px;   --e3: 12px;  --e4: 16px;  --e5: 24px;
+  --e6: 32px;  --e7: 48px;  --e8: 64px;  --e9: 96px;  --e10: 128px;
+
+  --espacio-seccion-padding: clamp(1.5rem, 6vw, 4rem);
+  --ancho-contenido-max: 68rem;
+
+  /* -------------------------------------------------
+     MOVIMIENTO
+     -------------------------------------------------
+     Transición de fondo entre secciones. Duración pensada para que
+     se sienta como un cambio deliberado, no instantáneo ni lento.
+     */
+  --duracion-bg-transition: 900ms;
+  --easing-estandar: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Equivalente CSS de power2.out, el easing que la skill recomienda
+     para revelados al scrollear. */
+  --easing-salida: cubic-bezier(0.215, 0.61, 0.355, 1);
+
+  /* Entrada de la foto de fondo de cada sección (opacidad + zoom).
+     Más larga que --duracion-bg-transition a propósito: la foto tiene
+     que terminar de asentarse DESPUÉS de que el degradé del body ya
+     cambió, si no los dos movimientos compiten y se lee como un
+     parpadeo. Ver css/fondos.css y js/fondos.js. */
+  --duracion-fondo-entrada: 1100ms;
+  --fondo-escala-entrada: 1.08;
+
+  /* Línea de ruta (signature element) — hilo fino, riel muy tenue */
+  --route-line-color-base: rgba(242, 244, 248, 0.16);
+  --route-line-color-fill: var(--color-acento);
+}
