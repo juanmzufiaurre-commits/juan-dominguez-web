@@ -22,10 +22,19 @@
   const datos = document.querySelectorAll('[data-contador]');
   if (datos.length === 0) return;
 
-  // Duración dentro del rango 400-600ms que la skill ui-ux-pro-max
-  // recomienda para revelados al entrar en viewport. Los números son
-  // chicos (4, 2), así que más largo se sentiría lento.
-  const DURACION = 900;
+  /* Duración de la subida. Deliberadamente larga para lo que suele usarse
+     en un contador, y el motivo son los números: 4 y 2 tienen muy pocos
+     pasos intermedios. A 900ms el 4 se alcanzaba antes de la mitad del
+     recorrido y el resto de la animación quedaba congelada en el valor
+     final — se veía como si apareciera puesto, no sumando.
+     Con 1800ms cada número queda a la vista unos 400ms, que es el mínimo
+     para que el ojo lo registre como un paso. */
+  const DURACION = 1800;
+
+  /* Arranque escalonado entre un dato y el siguiente. Sin esto los dos
+     contadores tictaquean al unísono y se lee como un solo bloque
+     parpadeando en vez de dos datos independientes. */
+  const ESCALONADO = 180;
 
   const sinMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -67,21 +76,35 @@
   }
 
   /**
-   * Sube el número de 0 al destino. Usa easing "out": arranca rápido y
-   * frena al final, que es lo que hace que se lea como un contador y
-   * no como una barra de progreso.
+   * Sube el número de 0 al destino con un frenado suave al final.
+   *
+   * @param {Element} elemento  el .dato__valor a animar
+   * @param {number}  retraso   ms de espera antes de arrancar
    */
-  function contar(elemento) {
+  function contar(elemento, retraso) {
     const destino = parseInt(elemento.dataset.contador, 10);
     if (!Number.isFinite(destino)) return;
 
+    // Marca para la red de seguridad de más abajo
+    elemento.dataset.contado = 'si';
+
     const prefijo = elemento.dataset.prefijo || '';
-    const arranque = performance.now();
+    const arranque = performance.now() + (retraso || 0);
 
     function frame(ahora) {
-      const t = Math.min((ahora - arranque) / DURACION, 1);
-      // easeOutCubic — equivalente al power2.out de la skill
-      const suave = 1 - Math.pow(1 - t, 3);
+      const transcurrido = ahora - arranque;
+
+      // Todavía en la espera del escalonado
+      if (transcurrido < 0) {
+        window.requestAnimationFrame(frame);
+        return;
+      }
+
+      const t = Math.min(transcurrido / DURACION, 1);
+      /* easeOutQuad y no easeOutCubic: la cúbica arranca demasiado rápido
+         y se come los primeros números antes de que se lleguen a ver.
+         La cuadrática reparte mejor los pocos pasos que hay. */
+      const suave = 1 - Math.pow(1 - t, 2);
       elemento.textContent = prefijo + Math.round(destino * suave);
 
       if (t < 1) {
@@ -105,7 +128,10 @@
       entradas.forEach((entrada) => {
         if (!entrada.isIntersecting) return;
         observador.unobserve(entrada.target);
-        contar(entrada.target);
+        // El retraso sale de la posición del dato en la fila, para que
+        // arranquen de izquierda a derecha y no todos juntos.
+        const indice = Array.prototype.indexOf.call(datos, entrada.target);
+        contar(entrada.target, Math.max(indice, 0) * ESCALONADO);
       });
     },
     { threshold: 0.6 }
@@ -114,36 +140,53 @@
   alSalirLaIntro(() => {
     datos.forEach((dato) => {
       // Recién acá se pone en 0: si se hiciera antes, el dato quedaría
-      // en cero durante toda la intro y en 0 para siempre si el
-      // observer nunca dispara.
+      // en cero durante toda la intro.
       const prefijo = dato.dataset.prefijo || '';
       dato.textContent = prefijo + '0';
       observador.observe(dato);
     });
+
+    /* RED DE SEGURIDAD.
+       Poner el dato en 0 y esperar a que el observer lo anime tiene un
+       riesgo: si por lo que sea el conteo nunca arranca, el número se
+       queda en CERO, que no es un estado neutro sino un dato FALSO
+       ("0 años importando"). Peor que no animar.
+       Pasados unos segundos, cualquier dato que no haya empezado a
+       contar recibe su valor real. Mismo criterio que el watchdog de la
+       intro en index.html. */
+    window.setTimeout(() => {
+      datos.forEach((dato) => {
+        if (dato.dataset.contado === 'si') return;
+        dato.textContent = (dato.dataset.prefijo || '') + dato.dataset.contador;
+      });
+    }, 8000);
   });
 })();
 
 
 /**
- * PLANO 3D DEL HERO
+ * PLANOS 3D CON PARALLAX POR CAPAS
  * ---------------------------------------------------------------
- * Inclina el conjunto panel + foto siguiendo el cursor.
+ * Inclina siguiendo el cursor cualquier elemento marcado con
+ * [data-plano]. Hoy son dos: el de la portada (panel + recorte de Juan)
+ * y el de "A qué me dedico" (panel + pila de consolas + Juan).
  *
- * El parallax entre las dos capas NO se calcula acá: el CSS las pone a
- * distinta profundidad con translateZ (panel en 0, foto en 52px) y la
- * perspectiva del contenedor hace el resto. Inclinar el plano alcanza
- * para que la foto se desplace más que el panel, que es exactamente lo
- * que se busca. Ver css/portada.css.
+ * El parallax entre capas NO se calcula acá: el CSS las pone a distinta
+ * profundidad con translateZ y la perspectiva del contenedor hace el
+ * resto. Inclinar el plano alcanza para que las capas de adelante se
+ * desplacen más que las de atrás, que es exactamente lo que se busca.
+ * Ver css/portada.css y css/rubro.css.
  *
  * El JS solo publica dos ángulos en --plano-x / --plano-y, igual que el
  * resto del sitio: el CSS decide cómo dibujarlos.
+ *
+ * Es genérico en vez de atado a un id porque son dos planos con la misma
+ * mecánica: duplicar el bucle habría significado mantener el mismo
+ * seguimiento, el mismo lerp y el mismo arreglo de frames en dos lados.
  */
 (function () {
-  const plano = document.getElementById('portada-plano');
-  if (!plano) return;
-
-  const visual = plano.closest('.portada__visual');
-  if (!visual) return;
+  const planos = document.querySelectorAll('[data-plano]');
+  if (planos.length === 0) return;
 
   const sinMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)');
   // En pantallas táctiles no hay cursor que seguir: el efecto no aplica
@@ -152,95 +195,115 @@
 
   if (sinMovimiento.matches || !punteroFino.matches) return;
 
-  /* Inclinación máxima en grados. 6° es el techo antes de que el panel
-     empiece a verse deformado en vez de inclinado. */
-  const MAX = 6;
+  /* Inclinación máxima en grados. Bajado de 6° a 3,5°: a 6° el gesto se
+     leía exagerado y competía con el contenido en vez de acompañarlo.
+     3,5° sigue siendo perfectamente perceptible —el desplazamiento entre
+     capas es proporcional al ángulo, así que el parallax se nota igual—
+     pero el recuadro ya no parece bambolearse.
+     Por debajo de ~2° el efecto se pierde; ese es el piso útil. */
+  const MAX = 3.5;
 
   /* Cuánto se acerca por frame al valor objetivo (0 a 1). 0.09 da una
      estela suave: el plano persigue al cursor con un poco de inercia en
      vez de pegarse a él, que es lo que lo hace sentir físico. */
   const SEGUIMIENTO = 0.09;
 
-  let objetivoX = 0;
-  let objetivoY = 0;
-  let actualX = 0;
-  let actualY = 0;
-  let dentroDeVista = true;
+  /**
+   * Engancha un plano. Cada uno lleva su propio estado, así que dos
+   * planos en la misma página no se pisan.
+   *
+   * @param {Element} plano  el elemento con [data-plano]
+   */
+  function engancharPlano(plano) {
+    // El bloque que define la zona sensible al cursor: el padre que
+    // tiene la perspectiva. Sin él no hay contra qué normalizar.
+    const visual = plano.parentElement;
+    if (!visual) return;
 
-  /* Se guarda el ID del frame pendiente, no un booleano "estoy animando".
-     Con un booleano queda un agujero: si un frame se agenda pero el
-     navegador nunca lo entrega (pestaña en segundo plano, throttling),
-     la bandera se queda en true para siempre y arrancar() no vuelve a
-     agendar nada — el efecto muere hasta recargar la página.
-     Con el ID se puede cancelar y reagendar sin depender de que el
-     frame anterior haya llegado. */
-  let frameEnCurso = 0;
+    let objetivoX = 0;
+    let objetivoY = 0;
+    let actualX = 0;
+    let actualY = 0;
+    let dentroDeVista = true;
 
-  function alMoverElCursor(evento) {
-    const caja = visual.getBoundingClientRect();
-    if (caja.width === 0 || caja.height === 0) return;
+    /* Se guarda el ID del frame pendiente, no un booleano "estoy
+       animando". Con un booleano queda un agujero: si un frame se agenda
+       pero el navegador nunca lo entrega (pestaña en segundo plano,
+       throttling), la bandera se queda en true para siempre y arrancar()
+       no vuelve a agendar nada — el efecto muere hasta recargar.
+       Con el ID se puede cancelar y reagendar sin depender de que el
+       frame anterior haya llegado. */
+    let frameEnCurso = 0;
 
-    // Posición del cursor dentro del bloque, normalizada de -1 a 1.
-    const nx = ((evento.clientX - caja.left) / caja.width) * 2 - 1;
-    const ny = ((evento.clientY - caja.top) / caja.height) * 2 - 1;
+    function alMoverElCursor(evento) {
+      const caja = visual.getBoundingClientRect();
+      if (caja.width === 0 || caja.height === 0) return;
 
-    // Signo de rotateX invertido: con el cursor ARRIBA (ny negativo)
-    // queremos rotateX positivo, que aleja el borde superior y deja el
-    // de abajo más largo. Es la inclinación que se pidió.
-    objetivoX = -ny * MAX;
-    // rotateY directo: cursor a la derecha aleja el borde derecho.
-    objetivoY = nx * MAX;
+      // Posición del cursor dentro del bloque, normalizada de -1 a 1.
+      const nx = ((evento.clientX - caja.left) / caja.width) * 2 - 1;
+      const ny = ((evento.clientY - caja.top) / caja.height) * 2 - 1;
 
-    arrancar();
+      // Signo de rotateX invertido: con el cursor ARRIBA (ny negativo)
+      // queremos rotateX positivo, que aleja el borde superior y deja el
+      // de abajo más largo. Es la inclinación que se pidió.
+      objetivoX = -ny * MAX;
+      // rotateY directo: cursor a la derecha aleja el borde derecho.
+      objetivoY = nx * MAX;
+
+      arrancar();
+    }
+
+    function alSalirElCursor() {
+      objetivoX = 0;
+      objetivoY = 0;
+      arrancar();
+    }
+
+    function frame() {
+      frameEnCurso = 0;
+
+      actualX += (objetivoX - actualX) * SEGUIMIENTO;
+      actualY += (objetivoY - actualY) * SEGUIMIENTO;
+
+      plano.style.setProperty('--plano-x', actualX.toFixed(3) + 'deg');
+      plano.style.setProperty('--plano-y', actualY.toFixed(3) + 'deg');
+
+      // Se corta el bucle cuando ya llegó: dejarlo girando en vacío
+      // mantendría una capa compuesta viva sin motivo.
+      const quieto =
+        Math.abs(objetivoX - actualX) < 0.01 &&
+        Math.abs(objetivoY - actualY) < 0.01;
+
+      if (quieto || !dentroDeVista) return;
+
+      frameEnCurso = window.requestAnimationFrame(frame);
+    }
+
+    function arrancar() {
+      if (!dentroDeVista) return;
+      // Siempre se reagenda: si quedó un frame viejo sin entregar, se
+      // cancela y se pide uno nuevo. Nunca queda más de uno pendiente.
+      if (frameEnCurso) window.cancelAnimationFrame(frameEnCurso);
+      frameEnCurso = window.requestAnimationFrame(frame);
+    }
+
+    // El cursor se sigue desde toda la ventana y no solo desde el bloque:
+    // así el plano ya viene inclinado cuando el cursor llega, en vez de
+    // pegar un salto al cruzar el borde.
+    window.addEventListener('mousemove', alMoverElCursor, { passive: true });
+    document.addEventListener('mouseleave', alSalirElCursor);
+
+    // Fuera de viewport no se calcula nada.
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(
+        (entradas) => {
+          dentroDeVista = entradas[0].isIntersecting;
+          if (dentroDeVista) arrancar();
+        },
+        { threshold: 0 }
+      ).observe(visual);
+    }
   }
 
-  function alSalirElCursor() {
-    objetivoX = 0;
-    objetivoY = 0;
-    arrancar();
-  }
-
-  function frame() {
-    frameEnCurso = 0;
-
-    actualX += (objetivoX - actualX) * SEGUIMIENTO;
-    actualY += (objetivoY - actualY) * SEGUIMIENTO;
-
-    plano.style.setProperty('--plano-x', actualX.toFixed(3) + 'deg');
-    plano.style.setProperty('--plano-y', actualY.toFixed(3) + 'deg');
-
-    // Se corta el bucle cuando ya llegó: dejarlo girando en vacío
-    // mantendría una capa compuesta viva sin motivo.
-    const quieto =
-      Math.abs(objetivoX - actualX) < 0.01 && Math.abs(objetivoY - actualY) < 0.01;
-
-    if (quieto || !dentroDeVista) return;
-
-    frameEnCurso = window.requestAnimationFrame(frame);
-  }
-
-  function arrancar() {
-    if (!dentroDeVista) return;
-    // Siempre se reagenda: si quedó un frame viejo sin entregar, se
-    // cancela y se pide uno nuevo. Nunca queda más de uno pendiente.
-    if (frameEnCurso) window.cancelAnimationFrame(frameEnCurso);
-    frameEnCurso = window.requestAnimationFrame(frame);
-  }
-
-  // El cursor se sigue desde toda la ventana y no solo desde el bloque:
-  // así el plano ya viene inclinado cuando el cursor llega, en vez de
-  // pegar un salto al cruzar el borde.
-  window.addEventListener('mousemove', alMoverElCursor, { passive: true });
-  document.addEventListener('mouseleave', alSalirElCursor);
-
-  // Fuera de viewport no se calcula nada.
-  if ('IntersectionObserver' in window) {
-    new IntersectionObserver(
-      (entradas) => {
-        dentroDeVista = entradas[0].isIntersecting;
-        if (dentroDeVista) arrancar();
-      },
-      { threshold: 0 }
-    ).observe(visual);
-  }
+  planos.forEach(engancharPlano);
 })();

@@ -16,13 +16,46 @@
   z-index: 1000;
   background: var(--bg-hero);
   overflow: hidden;
-  opacity: 1;
-  transition: opacity 700ms var(--easing-estandar);
+  transform: translateY(0);
 }
 
-.intro.intro--saliendo {
-  opacity: 0;
+/* -------------------------------------------------
+   REMATE — el empuje
+   -------------------------------------------------
+   La intro no se funde: se va empujada. Toda la escena (globo, cajas y
+   texto final) sube una pantalla entera mientras el Hero sube desde una
+   pantalla abajo, los dos a la misma velocidad y con el mismo easing.
+   Al moverse juntos y pegados se lee como una sola cinta que corre, y
+   no como dos animaciones sueltas que casualmente coinciden.
+
+   Las dos capas comparten estas variables justamente para que no se
+   puedan desincronizar por editar una sola.
+   ------------------------------------------------- */
+
+:root {
+  --empuje-duracion: 1000ms;
+  /* Arranca decidido y frena largo: da la sensación de peso, de que el
+     Hero viene empujando algo, en vez de un deslizamiento liviano. */
+  --empuje-easing: cubic-bezier(0.7, 0, 0.2, 1);
+}
+
+body.intro-empuje .intro {
+  transform: translateY(-100%);
   pointer-events: none;
+  transition: transform var(--empuje-duracion) var(--empuje-easing);
+}
+
+/* El Hero espera una pantalla abajo mientras corre la intro... */
+body.intro-lock main {
+  transform: translateY(100vh);
+}
+
+/* ...y sube a su lugar con el empuje. Va DESPUÉS de la regla de arriba
+   a propósito: las dos tienen la misma especificidad, así que gana la
+   última, y durante la transición ambas clases están puestas. */
+body.intro-empuje main {
+  transform: translateY(0);
+  transition: transform var(--empuje-duracion) var(--empuje-easing);
 }
 
 .intro__canvas {
@@ -102,8 +135,13 @@
 }
 
 /* Texto final ("Juntos construimos tu imperio.") — el remate
-   "imponente": centrado, grande, aparece cuando el resto de la escena
-   ya se está desvaneciendo. */
+   "imponente": centrado, grande, aparece por encima del racimo de cajas.
+
+   El halo oscuro NO es decorativo: el texto cae sobre cajas de cartón y
+   sobre las etiquetas de envío, que son casi blancas. Medido sin halo,
+   el contraste bajaba a 1.35:1 en esas zonas — texto blanco sobre
+   blanco. Oscurecer las cajas hasta que no pasara habría dejado el
+   racimo apagado, así que el respaldo se le pone al texto. */
 .intro__final {
   position: absolute;
   inset: 0;
@@ -118,6 +156,10 @@
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--color-texto-claro);
+  text-shadow:
+    0 1px 2px rgba(7, 11, 20, 0.9),
+    0 4px 20px rgba(7, 11, 20, 0.85),
+    0 0 52px rgba(7, 11, 20, 0.7);
   opacity: 0;
   transform: scale(0.96);
   transition: opacity 900ms var(--easing-estandar),
@@ -132,6 +174,9 @@
 
 /* La escena 3D se desvanece antes que el overlay completo, para que
    el texto final quede solo un instante sobre el fondo (fase 5). */
+/* Sin uso desde que el remate pasó a ser un empuje en vez de un
+   fundido. Se conserva por si se quiere volver a encadenar un
+   desvanecido del canvas; hoy no lo agrega nadie. */
 .intro__canvas.is-fading {
   transition: opacity 900ms var(--easing-estandar);
   opacity: 0;

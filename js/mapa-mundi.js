@@ -11,6 +11,11 @@
  *      si un bulto empujara la trama desde atrás.
  *   3. AVIONES — como mucho dos a la vez, con su trayectoria dibujada
  *      detrás; al aterrizar la estela se desvanece y el avión se va.
+ *   4. EL OVNI — easter egg: cada tanto a uno de esos aviones le toca
+ *      salir con forma de platillo, y hacerle click devuelve a la intro.
+ *
+ * Las cuatro cosas viven solo en escritorio con movimiento permitido: en
+ * celular el mapa se dibuja una vez y se queda quieto (ver modoQuieto).
  *
  * LA GEOGRAFÍA NO ES INVENTADA: sale de window.CONTINENTES_DATA, el
  * mismo dataset de polígonos que usa el globo 3D de la intro (ver
@@ -35,6 +40,9 @@
 
   const sinMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)');
   const punteroFino = window.matchMedia('(hover: hover) and (pointer: fine)');
+  /* Mismo umbral que el resto del sitio (768px). Debajo de eso el mapa
+     se dibuja quieto — ver modoQuieto() más abajo. */
+  const consultaMobile = window.matchMedia('(max-width: 768px)');
 
   /* ------------------------------------------------------------
      COLORES — se leen de los tokens, no se hardcodean
@@ -83,6 +91,25 @@
   const DERIVA = 5;
 
   const MAX_AVIONES = 2;
+
+  /* ------------------------------------------------------------
+     EASTER EGG — EL OVNI
+     ------------------------------------------------------------
+     Cada tanto, uno de los aviones que cruzan el fondo sale con forma
+     de platillo. Si se le hace click, la página vuelve a la intro.
+
+     Los 15s son el intervalo MÍNIMO entre platillos, no un reloj fijo:
+     el ovni no aparece por su cuenta sino que le toca el turno al
+     próximo avión que salga, y los aviones salen cada 4 a 10 segundos.
+     Es a propósito — un platillo puntual cada 15s exactos se lee como
+     un elemento de interfaz; uno que aparece "cuando aparece" se lee
+     como un hallazgo, que es de lo que se trata. */
+  const CADA_OVNI = 15000;
+
+  /* Radio de click, bastante más grande que el dibujo (unos 12px de
+     ancho). Un blanco de 12px es imposible de acertar mientras se
+     mueve; con 22 se puede sin que deje de ser un gesto deliberado. */
+  const RADIO_OVNI = 22;
 
   /* ------------------------------------------------------------
      MÁSCARA DE TIERRA
@@ -201,6 +228,14 @@
   const aviones = [];
   let proximoAvion = 0;
 
+  /* Cuándo puede volver a tocarle a un platillo, y dónde está el que
+     hay ahora en pantalla (null si no hay). La posición se guarda en
+     cada frame porque el click se resuelve por distancia: el canvas es
+     pointer-events: none —está debajo del texto— así que no puede
+     recibir el click él mismo. */
+  let proximoOvni = CADA_OVNI;
+  let ovniEnPantalla = null;
+
   function medir() {
     const w = window.innerWidth;
     const h = window.innerHeight;
@@ -233,7 +268,7 @@
      AVIONES
      ------------------------------------------------------------ */
 
-  function nuevoAvion() {
+  function nuevoAvion(esOvni) {
     // Sale de un borde y aterriza en el lado opuesto, siempre cruzando
     // una buena parte de la pantalla.
     const desdeIzquierda = Math.random() < 0.5;
@@ -257,9 +292,14 @@
       cx: mx - (dy / largo) * curva,
       cy: my + (dx / largo) * curva,
       t: 0,
-      duracion: 7000 + Math.random() * 5000,
+      /* El platillo cruza más lento que un avión: da tiempo a verlo,
+         reconocerlo y decidir hacerle click. Con la duración de un avión
+         el easter egg era casi inalcanzable. */
+      duracion: esOvni ? 13000 + Math.random() * 4000
+                       : 7000 + Math.random() * 5000,
       // Fase tras aterrizar: la estela se apaga sola
-      apagado: 0
+      apagado: 0,
+      ovni: !!esOvni
     };
   }
 
@@ -302,16 +342,18 @@
     if (a.t < 1) {
       ctx.save();
       ctx.translate(punta.x, punta.y);
-      ctx.rotate(angulo);
-      ctx.globalAlpha = 0.9;
-      ctx.fillStyle = COLOR_ACENTO;
-      ctx.beginPath();
-      ctx.moveTo(6, 0);
-      ctx.lineTo(-4, 3.4);
-      ctx.lineTo(-2, 0);
-      ctx.lineTo(-4, -3.4);
-      ctx.closePath();
-      ctx.fill();
+
+      if (a.ovni) {
+        // El platillo NO se rota hacia la ruta: un ovni se mantiene
+        // horizontal aunque se desplace en diagonal, y esa quietud es
+        // justamente lo que lo delata entre los aviones.
+        dibujarOvni();
+        ovniEnPantalla = { x: punta.x, y: punta.y };
+      } else {
+        ctx.rotate(angulo);
+        dibujarAeronave();
+      }
+
       ctx.restore();
 
       // Punto de destino, marcado tenue
@@ -323,6 +365,112 @@
     }
 
     ctx.globalAlpha = 1;
+  }
+
+  /**
+   * La aeronave, en planta y con el origen ya trasladado y rotado hacia
+   * su rumbo. Silueta de 737: fuselaje con morro afinado, ala en flecha
+   * nacida a media eslora y estabilizador horizontal en la cola.
+   *
+   * Reemplaza a la punta de flecha que había antes. Una flecha se lee
+   * como un cursor o un marcador de dirección, no como un avión — y en
+   * una página sobre importación, los aviones son el tema.
+   *
+   * Mide unos 16 de largo por 14 de envergadura contra los 10x7 de la
+   * flecha. Tuvo que crecer: por debajo de eso el ala en flecha y el
+   * estabilizador se funden en una mancha y vuelve a parecer un triángulo.
+   *
+   * Las coordenadas son a ojo de la planta de un 737, no calcadas: a
+   * este tamaño lo que importa es la relación entre fuselaje, ala y
+   * cola, no la exactitud del contorno.
+   */
+  function dibujarAeronave() {
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = COLOR_ACENTO;
+
+    // Fuselaje: morro en punta adelante, cono de cola atrás
+    ctx.beginPath();
+    ctx.moveTo(8.5, 0);
+    ctx.quadraticCurveTo(4.5, -1.5, 0, -1.6);
+    ctx.lineTo(-6, -1.2);
+    ctx.quadraticCurveTo(-7.5, 0, -6, 1.2);
+    ctx.lineTo(0, 1.6);
+    ctx.quadraticCurveTo(4.5, 1.5, 8.5, 0);
+    ctx.fill();
+
+    /* Alas y estabilizadores, espejados.
+       La FLECHA DEL ALA es lo que decide si esto se lee como avión de
+       línea o como caza: el borde de ataque avanza 3,2 en 6,4 de
+       semienvergadura, unos 27°, que es lo que tiene un 737. Con 37°
+       —el primer intento— parecía un caza.
+       El estrechamiento también importa: cuerda 4,2 en la raíz contra
+       1,7 en la punta. Un ala de cuerda pareja se lee como tabla. */
+    for (let lado = -1; lado <= 1; lado += 2) {
+      // Ala
+      ctx.beginPath();
+      ctx.moveTo(2.6, 0.6 * lado);
+      ctx.lineTo(-0.6, 7 * lado);
+      ctx.lineTo(-2.3, 7 * lado);
+      ctx.lineTo(-1.6, 0.6 * lado);
+      ctx.closePath();
+      ctx.fill();
+
+      /* Motores, por delante del ala y colgados de ella. Son dos manchas
+         de 2x1 que a tamaño real casi no se distinguen, pero rompen el
+         borde de ataque y es eso lo que termina de decir "bimotor de
+         pasajeros" en vez de "ala sola". */
+      ctx.beginPath();
+      ctx.ellipse(1.7, 3.2 * lado, 1.2, 0.62, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Estabilizador horizontal
+      ctx.beginPath();
+      ctx.moveTo(-4.6, 0.6 * lado);
+      ctx.lineTo(-6.6, 3.4 * lado);
+      ctx.lineTo(-7.5, 3.4 * lado);
+      ctx.lineTo(-6.2, 0.6 * lado);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+
+  /**
+   * El platillo, dibujado con el origen ya trasladado a su posición.
+   * Mide unos 12x8, lo mismo que ocupa el avión: se pidió que no se
+   * distinga por tamaño sino por forma.
+   */
+  function dibujarOvni() {
+    // Las luces del borde laten. Es la única señal en movimiento propio
+    // que tiene, y desde que se le sacó el halo, la única pista de que
+    // ahí hay algo distinto de un avión.
+    const latido = 0.5 + 0.5 * Math.sin(performance.now() / 260);
+
+    ctx.fillStyle = COLOR_ACENTO;
+
+    /* SIN HALO A PROPÓSITO. Tenía una elipse tenue alrededor que lo
+       hacía notorio; se sacó para que pase desapercibido, que es lo que
+       corresponde a un easter egg. El precio es que hay que mirar para
+       encontrarlo, y está bien que así sea. */
+
+    // Cúpula
+    ctx.globalAlpha = 0.75;
+    ctx.beginPath();
+    ctx.ellipse(0, -1.2, 3.2, 2.8, 0, Math.PI, 0);
+    ctx.fill();
+
+    // Casco
+    ctx.globalAlpha = 0.95;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 6.2, 2.1, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Luces de abajo
+    ctx.globalAlpha = 0.45 + latido * 0.5;
+    for (let i = -1; i <= 1; i++) {
+      ctx.beginPath();
+      ctx.arc(i * 3.1, 1.9, 0.9, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
   /* ------------------------------------------------------------
@@ -407,9 +555,19 @@
 
     // --- Aviones ---
     if (aviones.length < MAX_AVIONES && ahora > proximoAvion) {
-      aviones.push(nuevoAvion());
+      // Le toca el turno al platillo si ya pasó su intervalo y no hay
+      // otro cruzando. La condición de "no hay otro" evita que dos
+      // platillos coincidan en pantalla, que arruinaría el hallazgo.
+      const tocaOvni = ahora > proximoOvni && !ovniEnPantalla;
+      aviones.push(nuevoAvion(tocaOvni));
+      if (tocaOvni) proximoOvni = ahora + CADA_OVNI;
       proximoAvion = ahora + 4000 + Math.random() * 6000;
     }
+
+    /* Se borra antes de dibujar y lo repone dibujarAvion() si el
+       platillo sigue en pantalla. Así la posición para el click nunca
+       queda apuntando a un ovni que ya se fue. */
+    ovniEnPantalla = null;
 
     for (let i = aviones.length - 1; i >= 0; i--) {
       const a = aviones[i];
@@ -466,8 +624,24 @@
 
   medir();
 
+  /* En el celular el mapa se dibuja UNA VEZ y se queda quieto.
+   *
+   * El costo del bucle no está en los puntos (son unos 270 por frame,
+   * baratos): está en que cada frame borra y repinta el canvas ENTERO —
+   * 1,22 megapíxeles a dpr 2 — y como es una capa fija sobre toda la
+   * página, obliga al navegador a recomponerla sin parar. Encima las
+   * estelas de los aviones son 52 trazos punteados por frame. En un
+   * teléfono eso se siente al scrollear.
+   *
+   * Lo que se pierde es poco: la lupa necesita un cursor que en el celu
+   * no existe, y los aviones y la deriva son decorativos. La trama de
+   * continentes, que es lo que se ve, queda igual. */
+  function modoQuieto() {
+    return sinMovimiento.matches || consultaMobile.matches;
+  }
+
   function remedir() {
-    if (medir() && sinMovimiento.matches) pintarQuieto();
+    if (medir() && modoQuieto()) pintarQuieto();
   }
 
   window.addEventListener('resize', remedir, { passive: true });
@@ -492,10 +666,75 @@
     });
   }
 
-  if (sinMovimiento.matches) {
+  /* ------------------------------------------------------------
+     EASTER EGG — CLICK EN EL OVNI
+     ------------------------------------------------------------
+     El canvas es pointer-events: none (vive debajo del texto, ver
+     css/mapa.css), así que no puede recibir el click él mismo. Se
+     escucha en la ventana y se resuelve por distancia contra la
+     posición que el bucle publica en cada frame. */
+
+  let volviendo = false;
+
+  function sobreElOvni(x, y) {
+    if (!ovniEnPantalla) return false;
+    return Math.hypot(x - ovniEnPantalla.x, y - ovniEnPantalla.y) < RADIO_OVNI;
+  }
+
+  window.addEventListener('click', function (e) {
+    if (volviendo || !sobreElOvni(e.clientX, e.clientY)) return;
+
+    /* No se secuestra un click destinado a otra cosa. Si el platillo
+       pasa por encima de un botón o un enlace, gana el botón: perder el
+       easter egg es intrascendente, mandar a alguien de vuelta a la
+       intro cuando quiso escribir por WhatsApp no lo es. */
+    const destino = e.target;
+    if (destino && destino.closest &&
+        destino.closest('a, button, input, textarea, select, [role="button"]')) return;
+
+    volviendo = true;
+
+    /* Un corte a negro corto antes de recargar. Sin él la recarga se
+       lee como un fallo de la página en vez de como una respuesta al
+       click. */
+    const telon = document.createElement('div');
+    telon.style.cssText =
+      'position:fixed;inset:0;z-index:9999;background:#070B14;opacity:0;' +
+      'pointer-events:none;transition:opacity 260ms ease';
+    document.body.appendChild(telon);
+    // Un frame de por medio: sin esto el navegador aplica los dos
+    // estilos juntos y no hay transición que ver.
+    window.requestAnimationFrame(function () { telon.style.opacity = '1'; });
+
+    window.setTimeout(function () { window.location.reload(); }, 280);
+  });
+
+  /* SIN CURSOR DE MANO, A PROPÓSITO.
+     Había un listener que ponía el puntero en 'pointer' al pasar por
+     encima del platillo. Se quitó: delataba el easter egg antes de que
+     nadie lo buscara. El ovni se puede clickear igual —el listener de
+     arriba no depende de ningún indicio visual— pero no se anuncia. */
+
+  if (modoQuieto()) {
     pintarQuieto();
   } else {
     arrancarBucle();
+  }
+
+  // Si se cruza el umbral de tamaño (rotar el teléfono, redimensionar la
+  // ventana), se cambia de modo en vez de quedar en el que tocó al cargar.
+  if ('addEventListener' in consultaMobile) {
+    consultaMobile.addEventListener('change', function () {
+      if (modoQuieto()) {
+        activo = false;
+        if (frameEnCurso) window.cancelAnimationFrame(frameEnCurso);
+        frameEnCurso = 0;
+        medir();
+        pintarQuieto();
+      } else {
+        arrancarBucle();
+      }
+    });
   }
 
   // Se muestra recién cuando ya hay algo dibujado, para que no aparezca
@@ -506,7 +745,7 @@
 
   // Con la pestaña en segundo plano no tiene sentido seguir calculando.
   document.addEventListener('visibilitychange', function () {
-    if (sinMovimiento.matches) return;
+    if (modoQuieto()) return;
     if (document.hidden) {
       activo = false;
     } else {

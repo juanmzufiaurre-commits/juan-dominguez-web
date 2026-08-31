@@ -98,10 +98,15 @@
    DATOS DE AUTORIDAD
    ------------------------------------------------- */
 
+/* Grilla de columnas iguales y no flex-wrap.
+   Con flex, los tres datos suman más ancho del que hay en la columna de
+   texto y el último se caía solo a una segunda fila: quedaban dos arriba
+   y uno abajo, desbalanceado. Con columnas parejas, lo que se acomoda es
+   la etiqueta (parte en dos renglones) y los tres quedan alineados. */
 .portada__datos {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--e6);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--e5);
   margin: var(--e2) 0 0;
   padding: 0;
   list-style: none;
@@ -461,9 +466,35 @@
   }
 }
 
+/* -------------------------------------------------
+   RENDIMIENTO EN CELULAR
+   -------------------------------------------------
+   backdrop-filter obliga al navegador a fotografiar lo que hay detrás
+   de cada tarjeta y desenfocarlo. Son 6 tarjetas, y detrás tienen fondo
+   con foto: en un teléfono eso se siente al scrollear.
+
+   Se cambia por un fondo opaco del mismo tono. Se pierde el vidrio
+   esmerilado, pero la tarjeta se sigue leyendo como una capa flotante
+   por su borde y su sombra — y en una pantalla chica el desenfoque casi
+   no se percibía. */
+
+@media (max-width: 768px) {
+  .vidrio {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: linear-gradient(155deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 100%),
+                rgba(9, 14, 26, 0.94);
+  }
+}
+
 @media (max-width: 560px) {
+  /* En 375px, tres columnas dejan ~100px por dato y "Clientes activos
+     importando" quedaría partido en cuatro renglones. Apilados, cada uno
+     tiene el ancho completo y su filete a la izquierda los sigue leyendo
+     como una serie. */
   .portada__datos {
-    gap: var(--e5);
+    grid-template-columns: 1fr;
+    gap: var(--e4);
   }
 
   .dato__valor { font-size: 1.75rem; }

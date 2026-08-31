@@ -164,14 +164,12 @@
   --fondo-overlay: var(--fondo-overlay-hero);
 }
 
+/* "A qué me dedico" tampoco lleva foto de fondo: la misma imagen ahora
+   está adelante, recortada en capas dentro del panel (ver css/rubro.css).
+   Repetirla difuminada atrás sería la misma foto dos veces.
+   bg-dedica.jpg queda en assets por si se la quiere recuperar. */
 .seccion[data-bg='dedica'] {
-  --fondo-img: url('../assets/img/bg-dedica.jpg');
   --fondo-overlay: var(--fondo-overlay-dedica);
-}
-
-/* Centrado en la pirámide de cajas */
-.seccion[data-bg='dedica']::before {
-  background-position: center 46%;
 }
 
 .seccion[data-bg='proceso'] {
@@ -194,13 +192,13 @@
   background-position: center 58%;
 }
 
+/* Contacto tampoco lleva foto de fondo: la foto del Lamborghini ahora
+   está adelante, dentro del recuadro (ver css/contacto.css). Repetir una
+   imagen difuminada atrás sería competirle a esa.
+   bg-contacto.jpg queda en assets por si se la quiere recuperar:
+   alcanza con devolver el --fondo-img. */
 .seccion[data-bg='contacto'] {
-  --fondo-img: url('../assets/img/bg-contacto.jpg');
   --fondo-overlay: var(--fondo-overlay-contacto);
-}
-
-.seccion[data-bg='contacto']::before {
-  background-position: center 50%;
 }
 
 /* -------------------------------------------------

@@ -1,0 +1,232 @@
+/* ===================================================================
+   CONTACTO — "¿Listo para importar?"
+   ===================================================================
+   Cierra el sitio con la misma composición de dos columnas que abren el
+   Hero y "A qué me dedico", pero espejada respecto de esta última: acá
+   el visual va a la DERECHA. La alternancia izquierda/derecha/izquierda
+   es lo que evita que las secciones se lean como la misma plantilla
+   repetida.
+
+   La sección ya NO lleva foto de fondo (ver css/fondos.css): la foto
+   ahora está adelante, dentro del recuadro. Repetirla difuminada atrás
+   sería la misma imagen dos veces.
+   =================================================================== */
+
+.contacto {
+  display: grid;
+  /* El texto pesa más que el visual: son dos botones y un titular
+     corto, y si se le da la mitad exacta el bloque queda flotando. */
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  align-items: center;
+  gap: clamp(var(--e6), 5vw, var(--e9));
+  width: 100%;
+}
+
+.contacto__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  /* Va primero en el HTML —para que un lector de pantalla llegue al
+     titular y a los botones antes que a la foto— y se manda a la
+     derecha desde acá. Mismo recurso que .rubro__copy. */
+  order: 2;
+}
+
+/* -------------------------------------------------
+   VISUAL — a la izquierda
+   ------------------------------------------------- */
+
+.contacto__visual {
+  order: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Mismo alto reservado que .portada__visual y .rubro__visual */
+  min-height: clamp(380px, 58vh, 620px);
+  /* La perspectiva vive acá y no en el plano: si estuviera en el plano,
+     el punto de fuga se movería con él. Mismo criterio que las otras
+     dos secciones con recuadro. */
+  perspective: 1100px;
+  perspective-origin: 50% 45%;
+}
+
+/* Aro punteado detrás, como en "A qué me dedico" */
+.contacto__aro {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(94%, 480px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border: 1px dashed rgba(217, 167, 60, 0.24);
+  border-radius: 50%;
+  animation: contacto-giro 110s linear infinite;
+}
+
+.contacto__aro::after {
+  content: '';
+  position: absolute;
+  inset: -12%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(217, 167, 60, 0.11) 0%, rgba(217, 167, 60, 0) 62%);
+}
+
+@keyframes contacto-giro {
+  to { transform: translate(-50%, -50%) rotate(-360deg); }
+}
+
+/* -------------------------------------------------
+   EL PLANO
+   -------------------------------------------------
+   EXACTAMENTE LAS MISMAS MEDIDAS QUE LOS OTROS DOS RECUADROS. Misma
+   fórmula que css/rubro.css, derivada de .portada__foto (ver la nota
+   larga allá):
+
+       ancho = clamp(340px, 62vh, 600px) * 0,6351
+       proporción = 0,6351 / 0,89
+
+   LA FOTO SE RECORTA PARA ENTRAR, Y ES UNA DECISIÓN TOMADA. El archivo
+   es 900x1084 (proporción 0,830) y el recuadro es 0,714 — más angosto.
+   Llenarlo cuesta unos 69px por lado, que se llevan el frente y la cola
+   del auto. Se eligió igualar las medidas antes que conservar el auto
+   entero: las tres secciones con recuadro miden lo mismo y eso pesa más
+   que el encuadre de una foto.
+   Si algún día se quiere el Lamborghini completo, la salida no es tocar
+   estos valores sino reencuadrar la foto más alta (unos 1260px de alto
+   sobre los 900 de ancho) y volver a exportarla.
+   ------------------------------------------------- */
+
+.contacto__plano {
+  position: relative;
+  --caja-hero: clamp(340px, 62vh, 600px);
+  width: min(100%, calc(var(--caja-hero) * 0.6351));
+  aspect-ratio: 0.6351 / 0.89;
+  transform-style: preserve-3d;
+  transform:
+    rotateX(var(--plano-x, 0deg))
+    rotateY(var(--plano-y, 0deg));
+  will-change: transform;
+}
+
+/* EL RECUADRO, calcado del que viene dibujado en el archivo.
+   Existe solo para llevar el borde y la sombra. Antes los llevaba el
+   <img>, y como su caja incluye los márgenes transparentes del lienzo
+   —72px a la izquierda, 60 a la derecha— la sombra salía dibujando un
+   rectángulo mucho más grande que la foto, que se veía flotando
+   alrededor. Este div coincide con el recuadro real, así que la sombra
+   cae donde tiene que caer.
+
+   Todos los números salen de medir lambo.png, no de tantear:
+     proporción  856/1190 = 0,7193
+     centro      x 499,5 contra 494 del lienzo -> 0,64% a la derecha
+     radio       94px, que como porcentaje del recuadro es
+                 94/856 = 10,98% de ancho y 94/1190 = 7,90% de alto
+   El radio va en porcentaje y no en px para que la curva siga siendo la
+   misma que la del archivo en cualquier tamaño de pantalla; con un
+   valor fijo se despegarían al escalar.
+
+   Va al mismo translateZ que la foto para que se inclinen juntos. */
+.contacto__marco {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  height: 100%;
+  aspect-ratio: 0.7193;
+  border-radius: 10.98% / 7.9%;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+  transform: translate(-49.36%, -50%) translateZ(46px) scale(0.9582);
+}
+
+/* EL ARCHIVO NO ES UNA FOTO RECTANGULAR, y de ahí sale todo lo de acá.
+   Medido sobre lambo.png (988x1190):
+
+     recuadro dibujado   x 72..927  ->  856x1190, proporción 0,7193
+     radio de sus esquinas               94px
+     el auto SOBRESALE de ese recuadro:  el frente hasta x=11 y la cola
+                                         hasta x=982
+
+   O sea que la imagen ya viene armada como las otras secciones: un
+   recuadro con el motivo saliéndose de él. Y su proporción, 0,7193, es
+   prácticamente la de los otros dos recuadros del sitio (0,7136).
+
+   Por eso la foto va a height: 100%: así su recuadro interno mide lo
+   mismo que el de la portada y el de "A qué me dedico", y el auto asoma
+   por los costados como estaba pensado.
+
+   NO LLEVA border-radius NI box-shadow, y es el arreglo del problema.
+   Los tenía, pero aplicados a la caja del <img>, que incluye los
+   márgenes transparentes del lienzo: la sombra dibujaba un rectángulo
+   fantasma bastante más grande que la foto, visible alrededor de ella.
+   Ahora el contorno y la sombra los pone .contacto__marco, que sí
+   coincide con el recuadro dibujado. Las esquinas redondeadas vienen
+   del archivo. */
+.contacto__foto {
+  display: block;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  height: 100%;
+  width: auto;
+  max-width: none;
+  /* Adelante del aro: es la capa cercana, y esa diferencia de
+     profundidad es la que produce el desplazamiento al inclinar.
+
+     El scale() compensa la perspectiva, no es un ajuste a ojo: acercar
+     la foto 46px la agranda por 1100/1054, y sin corregirlo renderizaba
+     374px de ancho contra los 354 de los otros dos recuadros. El factor
+     inverso (1100−46)/1100 la devuelve a su medida y no anula la
+     inclinación, que depende de la profundidad y esa sigue intacta.
+     Mismo recurso que css/rubro.css.
+
+     El translate(-50%, -50%) va junto con el top/left: 50% de arriba:
+     es lo que centra la foto sobre el plano ahora que es más grande
+     que él. */
+  transform: translate(-50%, -50%) translateZ(46px) scale(0.9582);
+}
+
+/* -------------------------------------------------
+   RESPONSIVE
+   -------------------------------------------------
+   Una sola columna. Acá el visual va DEBAJO del texto y no encima como
+   en las otras secciones: el cierre del sitio son los dos botones de
+   contacto, y meter una foto grande entre el titular y los botones los
+   empuja fuera de pantalla. */
+
+@media (max-width: 900px) {
+  .contacto {
+    grid-template-columns: 1fr;
+    gap: var(--e6);
+  }
+
+  /* Se anula el order de escritorio y vuelve a mandar el del HTML.
+     En una columna la foto tiene que quedar DEBAJO de los botones: son
+     la acción principal del cierre del sitio, y una foto de 400px de
+     alto metida entre el titular y ellos los empuja fuera de pantalla.
+     Sin este bloque el order: 1 del visual también se aplica acá y la
+     foto se sube. */
+  .contacto__copy   { order: 0; }
+  .contacto__visual { order: 0; }
+
+  .contacto__visual {
+    min-height: clamp(300px, 42vh, 420px);
+  }
+
+  /* Mismo valor que toma el Hero en este breakpoint */
+  .contacto__plano { --caja-hero: clamp(300px, 44vh, 440px); }
+}
+
+/* -------------------------------------------------
+   ACCESIBILIDAD — movimiento reducido
+   ------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .contacto__aro {
+    animation: none;
+  }
+
+  .contacto__plano {
+    transform: none;
+    will-change: auto;
+  }
+}

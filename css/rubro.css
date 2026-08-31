@@ -1,0 +1,342 @@
+/* ===================================================================
+   RUBRO — "A qué me dedico"
+   ===================================================================
+   Espejo de la portada: el visual va a la IZQUIERDA y el texto a la
+   derecha, para que las dos primeras pantallas no repitan la misma
+   composición.
+
+   El plano funciona igual que el del Hero (ver css/portada.css): las
+   capas están a distinta profundidad con translateZ y la inclinación
+   con el cursor genera el parallax entre ellas sola.
+
+     marco  → translateZ(0)     el recuadro, lo que menos se mueve
+     pila   → translateZ(28px)  la pirámide de consolas
+     figura → translateZ(58px)  Juan, lo que más se mueve
+
+   NO HAY FOTO COMPLETA DE FONDO, Y ES DELIBERADO.
+   La versión anterior ponía la foto entera dentro del marco y encima el
+   recorte de Juan. Fallaba: al separarse las capas asomaba el Juan
+   "impreso" en la foto de atrás y se lo veía duplicado. Se había
+   confiado en que la perspectiva agranda la figura lo suficiente como
+   para tapar su copia, pero un escalado desde el centro deja holgura
+   CERO justo en el centro y solo crece hacia los bordes — y Juan está
+   centrado, así que ahí no había nada de margen.
+   Sin foto abajo no hay copia que destapar: el problema desaparece en
+   vez de quedar compensado.
+
+   Las dos capas salen del mismo original recortadas por el mismo
+   encuadre, así que se superponen pixel a pixel entre ellas y no hay
+   que posicionarlas a mano. La pila está completa (las consolas que
+   Juan tapa están dibujadas), por eso al desplazarse no deja hueco.
+   =================================================================== */
+
+.rubro {
+  display: grid;
+  /* El visual pesa un poco menos que el texto: la pirámide es ancha y
+     si se le da la mitad exacta empuja el párrafo a renglones muy
+     cortos. */
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  align-items: center;
+  gap: clamp(var(--e6), 5vw, var(--e9));
+  width: 100%;
+}
+
+/* -------------------------------------------------
+   COPY — a la derecha
+   ------------------------------------------------- */
+
+.rubro__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--e5);
+  /* Va segundo en el HTML (para que un lector de pantalla llegue al
+     título antes que a las imágenes) y se coloca a la derecha desde
+     acá. */
+  order: 2;
+}
+
+.rubro__copy .eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--e3);
+  margin-bottom: 0;
+}
+
+.rubro__copy .eyebrow::before {
+  content: '';
+  width: 32px;
+  height: 1px;
+  background: var(--color-acento-hondo);
+  flex-shrink: 0;
+}
+
+.rubro__copy .titulo-seccion {
+  margin-bottom: 0;
+  max-width: 16ch;
+  text-wrap: balance;
+}
+
+.rubro__copy .texto-cuerpo {
+  max-width: 48ch;
+}
+
+/* -------------------------------------------------
+   VISUAL — a la izquierda
+   ------------------------------------------------- */
+
+.rubro__visual {
+  order: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Mismo alto reservado que .portada__visual: las dos primeras
+     pantallas ocupan igual y ninguna se lee más chica que la otra. */
+  min-height: clamp(380px, 58vh, 620px);
+  /* La perspectiva vive acá y no en el plano: si estuviera en el plano,
+     el punto de fuga se movería con él. */
+  perspective: 1100px;
+  perspective-origin: 50% 45%;
+}
+
+/* Aro dibujado detrás, como en la portada pero más contenido */
+.rubro__aro {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(94%, 480px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border: 1px dashed rgba(217, 167, 60, 0.24);
+  border-radius: 50%;
+  animation: rubro-giro 110s linear infinite;
+}
+
+.rubro__aro::after {
+  content: '';
+  position: absolute;
+  inset: -12%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(217, 167, 60, 0.11) 0%, rgba(217, 167, 60, 0) 62%);
+}
+
+@keyframes rubro-giro {
+  to { transform: translate(-50%, -50%) rotate(-360deg); }
+}
+
+/* -------------------------------------------------
+   EL PLANO Y SUS CAPAS
+   ------------------------------------------------- */
+
+/* MISMO TAMAÑO QUE EL RECUADRO DE LA PORTADA, DERIVADO DE SU FÓRMULA.
+   El panel del Hero no tiene medidas propias: lo dimensiona la foto de
+   Juan (.portada__foto, max-height: clamp(340px, 62vh, 600px)) y el
+   panel es un recorte de esa caja — top 13%, bottom -2%, left/right 4%
+   (ver css/portada.css). De ahí salen los dos factores:
+
+     alto  = caja * (1 − 0,13 + 0,02)            = caja * 0,89
+     ancho = caja * (720/1043) * (1 − 0,08)      = caja * 0,6351
+             └ proporción del PNG ┘  └ inset lateral ┘
+
+   Se copia la fórmula y no el resultado a propósito: el Hero es fluido
+   con la altura de la ventana, así que un valor fijo coincidiría solo
+   en la pantalla donde se lo midió. Con esto los dos recuadros crecen y
+   se achican juntos.
+   Si se toca el tamaño de la foto del Hero o los insets del panel, hay
+   que actualizar estos dos números. */
+.rubro__plano {
+  position: relative;
+  --caja-hero: clamp(340px, 62vh, 600px);
+  /* min(100%) por si la columna es más angosta que la fórmula: el
+     aspect-ratio se encarga de bajar el alto en proporción. */
+  width: min(100%, calc(var(--caja-hero) * 0.6351));
+  aspect-ratio: 0.6351 / 0.89;
+  transform-style: preserve-3d;
+  transform:
+    rotateX(var(--plano-x, 0deg))
+    rotateY(var(--plano-y, 0deg));
+  will-change: transform;
+}
+
+/* EL MARCO: un panel liso, sin nada adentro.
+   Es contra lo que se recortan las consolas — el recuadro del que
+   sobresalen— y no un contenedor. Por eso no lleva overflow: hidden,
+   que es justamente lo que impediría el desborde. */
+.rubro__marco {
+  position: absolute;
+  inset: 0;
+  border-radius: 26px;
+  border: 1px solid rgba(242, 244, 248, 0.09);
+  background:
+    linear-gradient(155deg, rgba(217, 167, 60, 0.12) 0%, rgba(217, 167, 60, 0) 46%),
+    linear-gradient(180deg, var(--color-base-700) 0%, var(--color-base-900) 100%);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+  transform: translateZ(0);
+}
+
+/* Las dos capas se dimensionan y se anclan IGUAL: misma altura, mismo
+   centro. Es lo que las hace calzar entre ellas.
+
+   118% de altura sobre un marco de 364 de ancho deja las imágenes en
+   ~497 de ancho: 66px de desborde a cada lado. Como la pila llega al
+   borde mismo del lienzo (medido: ocupa el 100% del ancho), esos 66px
+   son pirámide asomando fuera del recuadro, que es lo que se buscaba.
+
+   El top negativo reparte el excedente vertical: la pirámide sale por
+   arriba y Juan por abajo. Los dos valores están atados — al tocar uno
+   hay que revisar el otro. */
+.rubro__pila,
+.rubro__figura {
+  position: absolute;
+  top: -8%;
+  left: 50%;
+  height: 118%;
+  width: auto;
+  max-width: none;
+  display: block;
+  pointer-events: none;
+}
+
+/* EL scale() COMPENSA LA PERSPECTIVA, NO ES UN AJUSTE A OJO.
+   Acercar una capa con translateZ(z) la agranda por P/(P−z), con P los
+   1100px de perspectiva del contenedor. Sin corregirlo, Juan renderiza
+   más grande que las cajas aunque salgan de la misma foto: a z 22 y 78
+   la diferencia sería del 5,5%, que se ve.
+   El factor inverso (P−z)/P la devuelve a su tamaño real y NO anula el
+   parallax: el desplazamiento lateral al inclinar el plano viene de la
+   profundidad, que sigue intacta. Se gana separación entre capas sin
+   pagarla en deformación.
+
+     pila    22 → 1078/1100 = 0,98
+     figura  78 → 1022/1100 = 0,929
+
+   Los 56px de separación son casi el doble que antes: compensan el
+   ángulo más suave (3,5° en vez de 6°) para que el parallax se siga
+   notando aunque el recuadro se mueva menos.
+
+   Sin drop-shadow a propósito: es un filtro sobre una imagen de 900px
+   dentro de un elemento que se transforma, y el navegador lo recalcula
+   en cada frame. La sombra la pone el marco, que es un div y sale
+   gratis. */
+/* El 0,82 en vez del 0,98 que pediría la compensación pura es una
+   decisión de diseño, no un cálculo: a tamaño real la pirámide tapaba
+   el recuadro entero y no se leía el marco.
+
+   El piso de este valor está en 0,624: por debajo la pirámide deja de
+   desbordar y queda encerrada, que es justo lo que no se quiere. 0,82
+   la deja sobresaliendo unos 56px por lado sobre un marco de 354 y con
+   el vértice a ras del borde superior — llena el recuadro a lo alto sin
+   pasarse, y revienta por los costados.
+
+   Al achicarla desde su centro también baja su techo: es lo que la dejó
+   alineada arriba. Si se sube más el valor, vuelve a asomar por encima. */
+.rubro__pila {
+  transform: translateX(-50%) translateZ(22px) scale(0.82);
+}
+
+/* OJO AL TOCAR ESTE scale: el pasto de ps5-juan.webp está recortado en
+   el archivo para medir exactamente lo mismo que el marco, y ese
+   recorte se calculó con 0,929 (ver el 68,57% del ancho del lienzo). Si
+   cambia la escala o el 118% de altura, el pasto deja de estar alineado
+   con los bordes del recuadro y hay que regenerar la imagen. */
+.rubro__figura {
+  /* Sube 7 puntos sobre el -8% que comparte con la pila.
+     Al achicar la pirámide, su base trepó y entre ella y el techo del
+     pasto quedaban 18,3px de panel desnudo, visibles como dos franjas a
+     los costados de Juan. Subir la figura los tapa.
+
+     ESTE VALOR ESTÁ CASI EN SU TOPE INFERIOR y conviene saberlo antes
+     de tocarlo. El hueco a tapar mide 6,85% del alto del marco; el
+     desplazamiento se aplica en maquetación pero se ve proyectado, y a
+     78px de profundidad todo se agranda por 1100/1022. O sea que este
+     7% rinde 7,53% en pantalla y deja apenas 0,68% de solape — unos
+     3,5px sobre un marco de 497.
+     Con -8% (7% + el 1% de margen) el pasto montaba 8,8px sobre la
+     última fila de cajas y se notaba tapándolas; con menos de -6,4% el
+     hueco se vuelve a abrir. La ventana útil es esa.
+     Si se toca la escala de la pila, hay que rehacer la cuenta: el
+     hueco depende de dónde termine la pirámide. */
+  top: -15%;
+  transform: translateX(-50%) translateZ(78px) scale(0.929);
+}
+
+/* -------------------------------------------------
+   TARJETA FLOTANTE
+   ------------------------------------------------- */
+
+.vidrio--rubro {
+  bottom: 6%;
+  left: -4%;
+  display: flex;
+  align-items: center;
+  gap: var(--e3);
+  padding: var(--e3) var(--e5);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-texto-claro);
+  white-space: nowrap;
+  animation: rubro-levita 7s ease-in-out infinite;
+}
+
+@keyframes rubro-levita {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+/* -------------------------------------------------
+   RESPONSIVE
+   -------------------------------------------------
+   Una sola columna, con el visual arriba: misma lectura que la portada
+   en pantallas chicas. */
+
+@media (max-width: 900px) {
+  .rubro {
+    grid-template-columns: 1fr;
+    gap: var(--e6);
+  }
+
+  .rubro__visual {
+    order: -1;
+    min-height: clamp(300px, 42vh, 420px);
+  }
+
+  .rubro__copy {
+    order: 0;
+  }
+
+  /* El Hero también achica su foto en este breakpoint
+     (max-height: clamp(300px, 44vh, 440px)): se replica el mismo valor
+     para que sigan midiendo igual en una columna. */
+  .rubro__plano { --caja-hero: clamp(300px, 44vh, 440px); }
+
+  .rubro__copy .titulo-seccion,
+  .rubro__copy .texto-cuerpo {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .vidrio--rubro {
+    left: 0;
+    font-size: 0.6875rem;
+    padding: var(--e2) var(--e4);
+  }
+}
+
+/* -------------------------------------------------
+   ACCESIBILIDAD — movimiento reducido
+   ------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .rubro__aro,
+  .vidrio--rubro {
+    animation: none;
+  }
+
+  .rubro__plano {
+    transform: none;
+    will-change: auto;
+  }
+}

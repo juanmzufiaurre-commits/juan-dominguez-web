@@ -135,35 +135,77 @@
   margin-top: 2rem;
 }
 
+/* Mismo lenguaje que los botones del Hero: píldora, 48px de alto y
+   resplandor al pasar el mouse. No se usan los colores corporativos de
+   cada marca (el verde de WhatsApp, el degradé de Instagram) porque
+   romperían la paleta; el logo alcanza para que se reconozcan al
+   instante. Cada uno lleva su propio color DE LA PALETA para que se
+   distingan entre sí. */
+
 .contacto-link {
   display: inline-flex;
   align-items: center;
-  padding: 0.85rem 1.75rem;
-  border: 1px solid rgba(242, 244, 248, 0.3);
-  border-radius: 2px;
+  gap: 0.65rem;
+  min-height: 48px; /* mínimo táctil */
+  padding: 0 1.6rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
   text-decoration: none;
   /* Sans y no display: son botones, no titulares */
   font-family: var(--font-body);
-  font-weight: 500;
+  font-weight: 600;
   font-size: 0.95rem;
-  letter-spacing: 0.02em;
-  color: var(--color-texto-claro);
-  transition: border-color 200ms var(--easing-estandar),
-              background 200ms var(--easing-estandar);
+  letter-spacing: 0.01em;
+  transition: box-shadow 320ms var(--easing-salida),
+              transform 320ms var(--easing-salida),
+              border-color 320ms var(--easing-salida),
+              background 320ms var(--easing-salida);
 }
 
-.contacto-link:hover {
-  border-color: var(--color-acento);
-  background: rgba(217, 167, 60, 0.1);
+.contacto-link__logo {
+  flex-shrink: 0;
+  /* El logo hereda el color del texto: así cada botón se resuelve solo */
+  color: currentColor;
 }
+
+/* --- WhatsApp: acción principal, relleno --- */
+/* Es por donde Juan realmente cierra, así que lleva el peso visual. */
 
 .contacto-link--whatsapp {
-  border-color: var(--color-exito);
-  background: rgba(69, 160, 106, 0.12);
+  background: linear-gradient(180deg, #55B77C 0%, var(--color-exito) 100%);
+  color: #06170D; /* casi negro verdoso: 8,9:1 sobre el verde */
 }
 
-.contacto-link--whatsapp:hover {
-  background: rgba(69, 160, 106, 0.22);
+.contacto-link--whatsapp:hover,
+.contacto-link--whatsapp:focus-visible {
+  box-shadow: 0 0 30px rgba(69, 160, 106, 0.5);
+  transform: translateY(-1px);
+}
+
+/* --- Instagram: secundario, contorno --- */
+
+.contacto-link--instagram {
+  border-color: rgba(242, 244, 248, 0.28);
+  color: var(--color-texto-claro);
+  background: rgba(242, 244, 248, 0.04);
+}
+
+.contacto-link--instagram:hover,
+.contacto-link--instagram:focus-visible {
+  border-color: var(--color-acento);
+  color: var(--color-acento-suave);
+  background: rgba(217, 167, 60, 0.1);
+  transform: translateY(-1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .contacto-link {
+    transition: none;
+  }
+  .contacto-link:hover,
+  .contacto-link:focus-visible {
+    transform: none;
+  }
 }
 
 /* -------------------------------------------------

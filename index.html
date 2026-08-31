@@ -39,6 +39,8 @@
   <!-- Hero de presentación: va después de fondos.css porque le ajusta
        el padding a .seccion--portada (ver css/portada.css) -->
   <link rel="stylesheet" href="css/portada.css">
+  <link rel="stylesheet" href="css/rubro.css">
+  <link rel="stylesheet" href="css/contacto.css">
   <link rel="stylesheet" href="css/mapa.css">
   <link rel="stylesheet" href="css/route-line.css">
   <link rel="stylesheet" href="css/testimonios.css">
@@ -79,7 +81,15 @@
       if (!window.__introGlobeReady) {
         var intro = document.getElementById('intro');
         if (intro) intro.remove();
-        document.body.classList.remove('intro-lock');
+        document.body.classList.remove('intro-lock', 'intro-empuje');
+        // Al liberarse el scroll, el navegador aplicaría acá el salto al
+        // hash de la URL o la posición repuesta, y eso deja el Hero
+        // atrás. Mismo criterio que volverArriba() en js/intro-globe.js.
+        var raiz = document.documentElement;
+        var previo = raiz.style.scrollBehavior;
+        raiz.style.scrollBehavior = 'auto';
+        window.scrollTo(0, 0);
+        raiz.style.scrollBehavior = previo;
       }
     }, 2500);
   </script>
@@ -98,16 +108,16 @@
     </div>
     <ol class="route-line__stops">
       <li class="route-line__stop" data-stop="hero">
-        <a href="#hero"><span class="route-line__punto"></span><span class="route-line__label">Origen</span></a>
+        <a href="#hero"><span class="route-line__punto"></span><span class="route-line__label">Sobre mí</span></a>
       </li>
       <li class="route-line__stop" data-stop="dedica">
-        <a href="#dedica"><span class="route-line__punto"></span><span class="route-line__label">Rubro</span></a>
+        <a href="#dedica"><span class="route-line__punto"></span><span class="route-line__label">A qué me dedico</span></a>
       </li>
       <li class="route-line__stop" data-stop="proceso">
-        <a href="#proceso"><span class="route-line__punto"></span><span class="route-line__label">Trayecto</span></a>
+        <a href="#proceso"><span class="route-line__punto"></span><span class="route-line__label">Cómo funciona</span></a>
       </li>
       <li class="route-line__stop" data-stop="testimonios">
-        <a href="#testimonios"><span class="route-line__punto"></span><span class="route-line__label">Destino</span></a>
+        <a href="#testimonios"><span class="route-line__punto"></span><span class="route-line__label">Clientes</span></a>
       </li>
       <li class="route-line__stop" data-stop="contacto">
         <a href="#contacto"><span class="route-line__punto"></span><span class="route-line__label">Contacto</span></a>
@@ -150,25 +160,32 @@
           <!--
             DATOS DE AUTORIDAD
             ---------------------------------------------------------
-            Los dos que están son los únicos que la página respalda:
-            "desde 2018 en comercio, 2022 en importación" (sección
-            "A qué me dedico") y las dos rutas China/Paraguay.
+            Los tres salen del contenido del sitio o los confirmó el
+            cliente:
+              · "+4 años importando" — de "arranqué en 2022" (sección
+                "A qué me dedico")
+              · "+50 clientes activos importando" — cifra confirmada por
+                el cliente el 30/08/2026
+              · "2 rutas" — China y Paraguay, en todo el copy
 
-            FALTA CONFIRMAR CON JUAN: el boceto original traía
-            "+500 importadores formados" y "+10 años de experiencia".
-            Ninguno de los dos se sostiene con el contenido actual del
-            sitio, así que NO se publicaron. Cuando Juan confirme el
-            número real, descomentar el bloque de abajo y completarlo.
+            El boceto original traía "+500 importadores formados" y
+            "+10 años de experiencia". Ninguno de los dos se sostenía
+            con el contenido del sitio, así que nunca se publicaron; el
+            +30 de acá es el número real que los reemplaza.
 
-            <li class="dato">
-              <span class="dato__valor" data-contador="500" data-prefijo="+">+500</span>
-              <span class="dato__etiqueta">Importadores acompañados</span>
-            </li>
+            Para agregar o sacar un dato alcanza con el <li>: el
+            contador toma el destino de data-contador y el signo de
+            data-prefijo, y js/portada.js los anima escalonados de
+            izquierda a derecha, sin tocar nada más.
           -->
           <ul class="portada__datos reveal" data-reveal>
             <li class="dato">
               <span class="dato__valor" data-contador="4" data-prefijo="+">+4</span>
               <span class="dato__etiqueta">Años importando</span>
+            </li>
+            <li class="dato">
+              <span class="dato__valor" data-contador="50" data-prefijo="+">+50</span>
+              <span class="dato__etiqueta">Clientes activos importando</span>
             </li>
             <li class="dato">
               <span class="dato__valor" data-contador="2">2</span>
@@ -196,7 +213,7 @@
             perspectiva sola produce el parallax entre las dos — no hace
             falta moverlas por separado. Ver js/portada.js.
           -->
-          <div class="portada__plano" id="portada-plano">
+          <div class="portada__plano" data-plano>
             <div class="portada__panel" aria-hidden="true"></div>
             <img
               class="portada__foto"
@@ -233,29 +250,75 @@
     <!-- ============================================ -->
     <!-- SECCIÓN 2 — A QUÉ SE DEDICA                   -->
     <!-- ============================================ -->
-    <section class="seccion" id="dedica" data-bg="dedica" data-stop="dedica">
-      <div class="seccion__contenido">
+    <section class="seccion seccion--rubro" id="dedica" data-bg="dedica" data-stop="dedica">
+      <div class="seccion__contenido rubro">
+        <div class="rubro__copy">
         <p class="eyebrow reveal" data-reveal>01 — A qué me dedico</p>
         <h2 class="titulo-seccion reveal" data-reveal>
-          Importo lo que está en tendencia
+          Importo las oportunidades del mercado
         </h2>
+        <!--
+          Copy nuevo del cliente (30/08/2026). Reemplaza a los DOS
+          párrafos que había antes: el de "Desde 2018 hasta 2021
+          trabajé en el rubro del comercio..." y el de "No me
+          especializo en un solo rubro...". El texto nuevo cubre las
+          dos ideas, así que dejarlos habría quedado redundante.
+
+          OJO: con esto sale del sitio la única mención a las fechas
+          (comercio desde 2018, importación desde 2022), que era de
+          donde se deducía el "+4 años importando" del Hero. El dato
+          sigue siendo cierto, pero ya no está explicado en la página.
+        -->
         <p class="texto-cuerpo reveal" data-reveal>
-          Desde 2018 hasta 2021 trabajé en el rubro del comercio, y ahí aprendí
-          la importancia de la dedicación y el esfuerzo. En 2022 di el
-          siguiente paso y arranqué mi propio camino en la importación.
+          El comercio me enseñó que la clave no está en casarse con ningún
+          producto, sino en saber exactamente qué está pidiendo la gente.
+          Me dedico a cazar tendencias y productos de alta demanda. Si
+          tenés un artículo en mente, tengo la estructura en China y
+          Paraguay para ponerlo en tu puerta con los mejores precios del
+          mercado.
         </p>
-        <p class="texto-cuerpo reveal" data-reveal>
-          <!-- 
-            PENDIENTE DE DECISIÓN: falta confirmar si se van a nombrar
-            ejemplos concretos de productos (perfumes, celulares, PS5) 
-            para reforzar el ángulo de "tendencias", o si se deja más 
-            general sin nombrar productos puntuales. Ver conversación 
-            con el diseñador antes de cerrar este párrafo.
-          -->
-          No me especializo en un solo rubro: estoy siempre atento a lo
-          que se mueve, así que si tenés algo puntual en mente, hay
-          buenas chances de que pueda conseguírtelo.
-        </p>
+        </div>
+
+        <!--
+          VISUAL — a la IZQUIERDA, espejado respecto del Hero.
+          Misma mecánica que el plano de la portada: las capas viven a
+          distinta profundidad y la inclinación con el cursor produce el
+          parallax entre ellas. Ver css/rubro.css y js/portada.js.
+
+          NO hay foto completa de fondo, y es lo que elimina el fantasma:
+          si la hubiera, cada capa al moverse destaparía su propia copia
+          impresa debajo. El marco es un panel liso; lo único que se ve
+          son los dos recortes, que sobresalen de sus bordes.
+
+          Las dos capas salen de la MISMA foto recortada por el mismo
+          encuadre, así que calzan pixel a pixel entre ellas.
+        -->
+        <div class="rubro__visual">
+          <div class="rubro__aro" aria-hidden="true"></div>
+
+          <div class="rubro__plano" data-plano>
+            <!-- Panel de fondo. Va vacío: es el recuadro contra el que se
+                 recortan las consolas, no un contenedor. -->
+            <div class="rubro__marco" aria-hidden="true"></div>
+            <img
+              class="rubro__pila"
+              src="assets/img/ps5-pila.webp"
+              alt="Pila de consolas PlayStation 5 importadas"
+              width="900" height="948"
+              loading="lazy" decoding="async">
+            <img
+              class="rubro__figura"
+              src="assets/img/ps5-juan.webp"
+              alt="Juan Domínguez junto a la mercadería importada"
+              width="900" height="948"
+              loading="lazy" decoding="async">
+          </div>
+
+          <div class="vidrio vidrio--rubro">
+            <span class="vidrio__punto" aria-hidden="true"></span>
+            <span>+400 consolas PS5 importadas en un solo día</span>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -293,7 +356,7 @@
             <span class="paso__num">04</span>
             <div class="paso__texto">
               <h3>Te acompaño con la venta</h3>
-              <p>Cuando la mercadería llega, te comparto algunos tips prácticos para que puedas venderla mejor — no te dejo solo apenas te entrego el pedido.</p>
+              <p>Mi trabajo no termina cuando te entrego los productos. Te comparto estrategias y tips comerciales basados en mi experiencia para que rotes ese stock rápido y asegures tu rentabilidad.</p>
             </div>
           </li>
         </ol>
@@ -380,7 +443,8 @@
     <!-- SECCIÓN 5 — CONTACTO                          -->
     <!-- ============================================ -->
     <section class="seccion" id="contacto" data-bg="contacto" data-stop="contacto">
-      <div class="seccion__contenido seccion__contenido--contacto">
+      <div class="seccion__contenido seccion__contenido--contacto contacto">
+        <div class="contacto__copy">
         <p class="eyebrow reveal" data-reveal>04 — Hablemos</p>
         <h2 class="titulo-seccion reveal" data-reveal>¿Listo para importar?</h2>
         <p class="texto-cuerpo reveal" data-reveal>
@@ -388,21 +452,75 @@
         </p>
         <div class="contacto-links reveal" data-reveal>
           <!-- 
-            PENDIENTE: reemplazar el href="#" por el link real de cada uno.
-            WhatsApp: usar formato https://wa.me/549XXXXXXXXXX (código país 
-            + código área sin 0 + número sin 15).
-            Instagram: usar el link directo al perfil, 
-            ej: https://instagram.com/usuario_de_juan
-            
+            PENDIENTE: solo falta el WhatsApp, que sigue con href="#" y no
+            lleva a ningún lado. Formato: https://wa.me/549XXXXXXXXXX
+            (código país 54 + el 9 de celular + código de área sin 0 +
+            número sin 15).
+
+            Instagram YA ENLAZADO al perfil real. El link se guardó limpio
+            a propósito: el que da el botón "compartir" de la app viene con
+            ?utm_source= e &igsi=, que identifican esa sesión de compartido
+            y no aportan nada acá.
+
             Email SACADO a propósito: Juan confirmó que no quiere 
             mostrarlo, solo WhatsApp e Instagram.
           -->
-          <a href="#" class="contacto-link contacto-link--whatsapp" target="_blank" rel="noopener">
+          <!--
+            Los logos van como SVG en línea y no como imagen: heredan el
+            color del texto con currentColor, así cada botón resuelve su
+            propio color sin necesidad de un archivo por variante.
+
+            OJO: son reconstrucciones geométricas, no los archivos
+            oficiales de cada marca. Se ven bien y son reconocibles, pero
+            antes de publicar conviene reemplazarlos por los assets
+            oficiales (Meta Brand Center para WhatsApp e Instagram), que
+            además traen sus reglas de uso.
+          -->
+          <a href="#" class="contacto-link contacto-link--whatsapp" target="_blank" rel="noopener noreferrer">
+            <svg class="contacto-link__logo" width="19" height="19" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M12 1.75c-5.66 0-10.25 4.59-10.25 10.25 0 1.8.47 3.5 1.28 4.97L1.75 22.25l5.42-1.42a10.2 10.2 0 0 0 4.83 1.22c5.66 0 10.25-4.59 10.25-10.25S17.66 1.75 12 1.75Zm-3.4 5.6h.62c.3 0 .5.09.63.48l.62 1.5c.1.26.02.5-.18.68l-.5.45c-.18.16-.22.4-.1.62a8.1 8.1 0 0 0 2.83 2.83c.22.12.46.08.62-.1l.45-.5c.18-.2.42-.28.68-.18l1.5.62c.39.13.48.33.48.63v.62c0 .34-.05.66-.5.9-.66.35-1.53.35-2.4.02a10.6 10.6 0 0 1-5.6-5.6c-.33-.87-.33-1.74.02-2.4.24-.45.56-.5.9-.5Z"/>
+            </svg>
             WhatsApp
           </a>
-          <a href="#" class="contacto-link" target="_blank" rel="noopener">
+          <a
+            href="https://www.instagram.com/98.juan_dominguez/"
+            class="contacto-link contacto-link--instagram"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Instagram de Juan Domínguez (se abre en una pestaña nueva)">
+            <svg class="contacto-link__logo" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+              <rect x="2.6" y="2.6" width="18.8" height="18.8" rx="5.4"/>
+              <circle cx="12" cy="12" r="4.1"/>
+              <circle cx="17.5" cy="6.5" r="1.15" fill="currentColor" stroke="none"/>
+            </svg>
             Instagram
           </a>
+        </div>
+        </div>
+
+        <!--
+          VISUAL — a la DERECHA, alternando con "A qué me dedico" (que lo
+          tiene a la izquierda) para que las secciones no repitan la misma
+          composición.
+
+          Misma mecánica de inclinación con el cursor que el Hero y que
+          rubro: el plano gira y las capas a distinta profundidad se
+          desplazan entre sí solas. Ver css/contacto.css y js/portada.js.
+        -->
+        <div class="contacto__visual">
+          <div class="contacto__aro" aria-hidden="true"></div>
+
+          <div class="contacto__plano" data-plano>
+            <!-- Reproduce el recuadro que trae dibujado el archivo, para
+                 poder colgarle la sombra y el borde. Ver css/contacto.css. -->
+            <div class="contacto__marco" aria-hidden="true"></div>
+            <img
+              class="contacto__foto"
+              src="assets/img/lambo.webp"
+              alt="Juan Domínguez al volante de un Lamborghini Huracán verde"
+              width="900" height="1084"
+              loading="lazy" decoding="async">
+          </div>
         </div>
       </div>
     </section>

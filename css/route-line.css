@@ -109,7 +109,13 @@
   font-weight: 500;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  white-space: nowrap;
+  /* Las etiquetas largas parten en dos renglones en vez de estirar la
+     barra. Con nowrap, "A qué me dedico" medía 115px, la barra crecía a
+     152px y se metía encima del texto de las secciones, que reservan
+     136px a la izquierda (ver css/sections.css). El tope de 5.5rem la
+     mantiene siempre dentro de ese carril. */
+  max-width: 5.5rem;
+  line-height: 1.3;
   color: var(--color-texto-claro);
   opacity: 0.32;
   transition: opacity 320ms var(--easing-estandar);
